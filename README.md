@@ -66,16 +66,11 @@ The models are not in this repository. The app downloads them on first launch; f
 
 You need a Mac with Apple Silicon (M1 or later). The models take about 2.2 GB of disk space.
 
-### Download the app
+### Install from .dmg file
 
 1. Download the `.dmg` from the [Releases](../../releases/latest) page.
 2. Open it and drag **UnderText** into **Applications**.
-3. The app is not signed by Apple, so macOS blocks the first launch. Right-click UnderText in Applications and choose **Open**, then **Open** again. If that doesn't work, go to **System Settings → Privacy & Security** and click **Open Anyway**, or run:
-
-   ```bash
-   xattr -dr com.apple.quarantine /Applications/UnderText.app
-   ```
-
+3. The app is not signed by Apple, so macOS blocks the first launch. Right-click UnderText in Applications and choose **Open**, then **Open** again. If that doesn't work, go to **System Settings → Privacy & Security** and click **Open Anyway**.
 4. On first launch the settings window opens and lists the models it needs, with their sizes. Click **Download**. If `llama-server` from llama.cpp is not found (in your PATH or the Homebrew folders), it is downloaded as well.
 5. When the download finishes, choose where to listen and click **Save and Restart**.
 
