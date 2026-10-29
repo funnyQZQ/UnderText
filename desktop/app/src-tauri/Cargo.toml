@@ -1,0 +1,25 @@
+[package]
+name = "undertext-app"
+description = "UnderText: desktop app (Tauri 2)"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[[bin]]
+name = "undertext"
+path = "src/main.rs"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+undertext-core = { path = "../../crates/undertext-core" }
+undertext-engines = { path = "../../crates/undertext-engines" }
+anyhow.workspace = true
+log.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+env_logger = "0.11"
+tauri = { version = "2", features = ["tray-icon", "macos-private-api"] }
+tauri-plugin-dialog = "2"
+chrono = { version = "0.4", default-features = false, features = ["clock"] }

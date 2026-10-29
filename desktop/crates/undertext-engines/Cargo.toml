@@ -1,0 +1,37 @@
+[package]
+name = "undertext-engines"
+description = "Model and device adapters: sherpa-onnx (ASR, VAD, speaker), llama-server, audio IO"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+undertext-core = { path = "../undertext-core" }
+anyhow.workspace = true
+log.workspace = true
+serde_json.workspace = true
+cpal = "0.15"
+hound = "3"
+ureq = { version = "2", default-features = false, features = ["json"] }
+# Pure-Rust SentencePiece: the C++ one (sentencepiece-sys) clashes with the copy of
+# sentencepiece/protobuf-lite inside the static sherpa-onnx library (Linux/Windows).
+sentencepiece-rust = { version = "0.1", optional = true }
+
+# sherpa-onnx: on macOS link the shared libraries (libsherpa-onnx-c-api.dylib and
+# libonnxruntime.dylib). The onnxruntime in the osx-arm64 static archive decodes
+# Parakeet about 3.5x slower. sherpa-onnx-sys copies the dylibs next to the binaries
+# in target/<profile>/.
+#
+# Opus-MT drafts run on CTranslate2 (built from source with CMake).
+# macOS: Apple Accelerate for float math + Ruy for int8; elsewhere Ruy only.
+[target.'cfg(target_os = "macos")'.dependencies]
+sherpa-onnx = { version = "2", default-features = false, features = ["shared"] }
+ct2rs = { version = "0.10", default-features = false, features = ["ruy", "accelerate"], optional = true }
+
+[target.'cfg(not(target_os = "macos"))'.dependencies]
+sherpa-onnx = "2"
+ct2rs = { version = "0.10", default-features = false, features = ["ruy"], optional = true }
+
+[features]
+default = ["opus-mt"]
+opus-mt = ["dep:ct2rs", "dep:sentencepiece-rust"]

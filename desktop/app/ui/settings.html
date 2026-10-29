@@ -1,0 +1,970 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>UnderText Settings</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    --cjk: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif;
+    --accent: #007AFF;
+    --window: #EDEDF0;
+    --card: #FFFFFF;
+    --card-line: rgba(0, 0, 0, 0.07);
+    --label: #1D1D1F;
+    --secondary: rgba(60, 60, 67, 0.62);
+    --tertiary: rgba(60, 60, 67, 0.3);
+    --sep: rgba(60, 60, 67, 0.14);
+    --control: #FFFFFF;
+    --control-ring: 0 0 0 0.5px rgba(0, 0, 0, 0.16), 0 0.5px 1.5px rgba(0, 0, 0, 0.12);
+    --field: #FFFFFF;
+    --field-line: rgba(0, 0, 0, 0.15);
+    --switch-off: rgba(120, 120, 128, 0.2);
+    --segment-bg: rgba(120, 120, 128, 0.12);
+    --segment-on: #FFFFFF;
+    --green: #28A745;
+    --amber: #F4B440;
+    --red: #E5383B;
+    --ink: 20, 26, 38;
+  }
+  @supports (color: AccentColor) { :root { --accent: AccentColor; } }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --accent: #0A84FF;
+      --window: #1C1C1E;
+      --card: #2A2A2D;
+      --card-line: rgba(255, 255, 255, 0.06);
+      --label: #F2F2F7;
+      --secondary: rgba(235, 235, 245, 0.6);
+      --tertiary: rgba(235, 235, 245, 0.28);
+      --sep: rgba(255, 255, 255, 0.09);
+      --control: rgba(255, 255, 255, 0.13);
+      --control-ring: 0 0 0 0.5px rgba(255, 255, 255, 0.06), 0 0.5px 1px rgba(0, 0, 0, 0.35);
+      --field: rgba(0, 0, 0, 0.18);
+      --field-line: rgba(255, 255, 255, 0.13);
+      --switch-off: rgba(120, 120, 128, 0.36);
+      --segment-bg: rgba(118, 118, 128, 0.24);
+      --segment-on: rgba(255, 255, 255, 0.24);
+      --green: #32D74B;
+      --red: #FF453A;
+    }
+    @supports (color: AccentColor) { :root { --accent: AccentColor; } }
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    background: var(--window);
+    color: var(--label);
+    font: 13px/1.38 var(--font);
+    -webkit-font-smoothing: antialiased;
+    -webkit-user-select: none;
+    user-select: none;
+    cursor: default;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* title bar (traffic lights sit on top of it) */
+  .titlebar {
+    height: 40px;
+    flex: none;
+    display: grid;
+    place-items: center;
+    font-weight: 600;
+    color: var(--secondary);
+  }
+  .scroll { flex: 1; overflow-y: auto; padding: 2px 22px 22px; }
+  main { max-width: 560px; margin: 0 auto; }
+
+  /* header */
+  .hero { display: flex; align-items: center; gap: 14px; padding: 6px 4px 18px; }
+  .hero img { width: 52px; height: 52px; flex: none; border-radius: 12px; }
+  @media (prefers-color-scheme: dark) { .hero img { box-shadow: 0 0 0 0.5px rgba(255, 255, 255, 0.16); } }
+  .hero h1 { margin: 0; font-size: 17px; font-weight: 600; letter-spacing: -0.2px; }
+  .hero .state { display: flex; align-items: center; gap: 6px; color: var(--secondary); margin-top: 2px; }
+  .hero .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--tertiary); flex: none; }
+  .hero .dot.ok { background: var(--green); }
+  .hero .dot.live { background: var(--green); box-shadow: 0 0 0 3px color-mix(in srgb, var(--green) 25%, transparent); }
+  .hero .dot.bad { background: var(--red); }
+
+  .banner {
+    display: flex; align-items: center; gap: 10px;
+    background: color-mix(in srgb, var(--red) 10%, var(--card));
+    border: 0.5px solid color-mix(in srgb, var(--red) 30%, transparent);
+    border-radius: 10px; padding: 9px 12px; margin-bottom: 16px;
+  }
+  .banner span { flex: 1; }
+
+  /* cards */
+  h2 { font-size: 13px; font-weight: 600; margin: 0 4px 7px; }
+  .card {
+    background: var(--card);
+    border: 0.5px solid var(--card-line);
+    border-radius: 12px;
+    padding: 0 12px;
+    margin-bottom: 20px;
+    box-shadow: 0 0.5px 1.5px rgba(0, 0, 0, 0.04);
+  }
+  .row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 44px;
+    padding: 9px 0;
+    border-top: 0.5px solid var(--sep);
+  }
+  .row.first { border-top: 0; }
+  .row .text { flex: 1; min-width: 0; }
+  .row .text > label, .row .text > .label { display: block; }
+  .desc { display: block; color: var(--secondary); font-size: 11.5px; margin-top: 1px; }
+  .row .ctl { flex: none; display: flex; align-items: center; gap: 6px; justify-content: flex-end; }
+  .row .ctl.wide { flex: 0 1 290px; min-width: 150px; }
+  .unit { color: var(--secondary); line-height: 22px; width: 10px; }
+  .note { color: var(--secondary); font-size: 11.5px; margin: -13px 4px 20px; }
+  .hidden { display: none !important; }
+
+  /* subtitle preview */
+  /* fixed height: changing the text size must not move the rows below */
+  .preview {
+    margin: 12px 0 3px;
+    border-radius: 9px;
+    height: 136px;
+    box-sizing: border-box;
+    padding: 14px 14px 12px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    background:
+      radial-gradient(ellipse 50% 90% at 25% 30%, #4A5A78 0%, transparent 70%),
+      radial-gradient(ellipse 45% 90% at 78% 25%, #5D4C66 0%, transparent 70%),
+      linear-gradient(#2B3242, #191E29);
+    overflow: hidden;
+  }
+  /* like the subtitle window: grows upwards and cuts off the oldest text at the top */
+  .band {
+    border-radius: 9px;
+    padding: 8px 14px 10px;
+    background: rgba(var(--ink), var(--band, 0.55));
+    max-height: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
+    display: flex; flex-direction: column; justify-content: flex-end;
+  }
+  .band .para { flex: none; display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: 9px; }
+  .band .texts { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .band.side .texts { display: grid; grid-template-columns: 1fr 1fr; column-gap: 16px; }
+  .band.side.no-zh .texts, .band.side.no-en .texts { display: flex; }
+  .band .en { font: 500 var(--en-size, 11px)/1.35 var(--font); color: #AEB7C4; }
+  .band .zh { font: 600 var(--zh-size, 17px)/1.4 var(--cjk); color: #F5F7FA; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45); }
+  .band .spk { display: inline-block; font: 600 calc(var(--main-size, 17px) * 0.5)/1 var(--font); padding: 3px 5px; margin-top: calc(var(--main-size, 17px) * 0.12); border-radius: 4px; color: rgb(var(--ink)); background: var(--amber); }
+  .band .faded { opacity: 0.5; }
+  .band.no-zh .zh { display: none; }
+  .band.no-zh .en { font: 600 var(--en-size, 11px)/1.4 var(--font); color: #F5F7FA; }
+  .band.no-en .en { display: none; }
+  .band.no-spk .gutter { display: none; }
+
+  /* advanced disclosure */
+  details { margin-top: 2px; }
+  summary {
+    list-style: none;
+    display: flex; align-items: center; gap: 6px;
+    font-weight: 600; padding: 4px 4px 10px; width: max-content;
+    border-radius: 5px;
+  }
+  summary::-webkit-details-marker { display: none; }
+  summary::before {
+    content: ""; width: 7px; height: 7px; margin: 0 3px 0 1px;
+    border-right: 1.6px solid var(--secondary); border-bottom: 1.6px solid var(--secondary);
+    transform: rotate(-45deg); transition: transform 0.15s;
+  }
+  details[open] > summary::before { transform: rotate(45deg); margin-top: -3px; }
+  summary:focus-visible { outline: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 40%, transparent); }
+
+  /* text fields */
+  input[type=text], input[type=number] {
+    font: inherit; color: var(--label);
+    background: var(--field);
+    border: 0.5px solid var(--field-line);
+    border-radius: 6px;
+    height: 24px; padding: 0 7px; min-width: 0; outline: none;
+    -webkit-user-select: text; user-select: text;
+  }
+  input[type=text] { width: 100%; }
+  input[type=number] { width: 64px; text-align: right; }
+  input::placeholder { color: var(--tertiary); }
+  input[type=text]:focus, input[type=number]:focus {
+    box-shadow: 0 0 0 3.5px color-mix(in srgb, var(--accent) 38%, transparent);
+    border-color: color-mix(in srgb, var(--accent) 70%, transparent);
+  }
+
+  /* buttons */
+  button {
+    font: inherit; color: var(--label);
+    background: var(--control);
+    border: 0; border-radius: 6px;
+    height: 24px; padding: 0 12px;
+    box-shadow: var(--control-ring);
+    white-space: nowrap; flex: none;
+  }
+  button:active { filter: brightness(0.92); }
+  button.default { background: var(--accent); color: #FFFFFF; font-weight: 500; box-shadow: 0 0.5px 1px rgba(0, 0, 0, 0.2); }
+  button.icon-btn { width: 26px; padding: 0; display: grid; place-items: center; }
+  button.icon-btn svg { width: 13px; height: 13px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; }
+  button:focus-visible, select:focus-visible { outline: none; box-shadow: 0 0 0 3.5px color-mix(in srgb, var(--accent) 40%, transparent); }
+
+  /* popup buttons */
+  .popup { position: relative; display: inline-flex; min-width: 0; flex: 1; }
+  .popup select {
+    appearance: none; -webkit-appearance: none;
+    font: inherit; color: var(--label);
+    background: var(--control);
+    border: 0; border-radius: 6px;
+    height: 24px; padding: 0 28px 0 9px;
+    box-shadow: var(--control-ring);
+    width: 100%; min-width: 0; text-overflow: ellipsis;
+  }
+  .popup::after {
+    content: ""; position: absolute; right: 4px; top: 4px; width: 16px; height: 16px; border-radius: 4px;
+    background: var(--accent) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M5 6.5 8 3.8l3 2.7M5 9.5l3 2.7 3-2.7' fill='none' stroke='white' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 16px 16px no-repeat;
+    pointer-events: none;
+  }
+
+  /* switches */
+  input.switch {
+    appearance: none; -webkit-appearance: none;
+    flex: none; margin: 0;
+    width: 38px; height: 22px; border-radius: 11px;
+    background: var(--switch-off);
+    position: relative; transition: background-color 0.18s;
+  }
+  input.switch::before {
+    content: ""; position: absolute; top: 2px; left: 2px;
+    width: 18px; height: 18px; border-radius: 50%;
+    background: #FFFFFF;
+    box-shadow: 0 1px 2.5px rgba(0, 0, 0, 0.28), 0 0 0 0.5px rgba(0, 0, 0, 0.04);
+    transition: transform 0.18s;
+  }
+  input.switch:checked { background: var(--accent); }
+  input.switch:checked::before { transform: translateX(16px); }
+  input.switch:disabled { opacity: 0.45; }
+  input.switch:focus-visible { outline: none; box-shadow: 0 0 0 3.5px color-mix(in srgb, var(--accent) 40%, transparent); }
+
+  /* segmented control */
+  .segmented { display: inline-flex; background: var(--segment-bg); border-radius: 7px; padding: 2px; }
+  .segmented label { position: relative; }
+  .segmented input { position: absolute; opacity: 0; inset: 0; margin: 0; }
+  .segmented span { display: block; padding: 2px 14px; border-radius: 5px; }
+  .segmented input:checked + span { background: var(--segment-on); box-shadow: 0 0.5px 2px rgba(0, 0, 0, 0.16); font-weight: 500; }
+  .segmented input:focus-visible + span { box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 40%, transparent); }
+
+  /* sliders */
+  .slider { display: flex; align-items: center; gap: 10px; }
+  .slider output { width: 42px; text-align: right; color: var(--secondary); font-variant-numeric: tabular-nums; }
+  input[type=range] { appearance: none; -webkit-appearance: none; width: 180px; height: 20px; margin: 0; background: transparent; --p: 50%; }
+  input[type=range]::-webkit-slider-runnable-track {
+    height: 4px; border-radius: 2px;
+    background: linear-gradient(to right, var(--accent) var(--p), var(--switch-off) var(--p));
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 20px; height: 20px; margin-top: -8px; border-radius: 50%;
+    background: #FFFFFF; box-shadow: 0 0.5px 3px rgba(0, 0, 0, 0.3), 0 0 0 0.5px rgba(0, 0, 0, 0.06);
+  }
+  input[type=range]:focus-visible { outline: none; }
+  input[type=range]:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 3.5px color-mix(in srgb, var(--accent) 40%, transparent); }
+
+  /* model check list */
+  .checks { list-style: none; margin: 0 0 6px; padding: 0; }
+  .checks li { display: flex; align-items: center; gap: 8px; min-height: 26px; }
+  .checks .mark { width: 14px; height: 14px; border-radius: 50%; display: grid; place-items: center; color: #FFFFFF; font-size: 9px; font-weight: 700; flex: none; }
+  .checks .mark.ok { background: var(--green); }
+  .checks .mark.bad { background: var(--red); }
+  .checks .what { flex: none; width: 140px; }
+  .checks .path { flex: 1; min-width: 0; color: var(--secondary); font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; direction: rtl; text-align: left; -webkit-user-select: text; user-select: text; }
+  .checks .path.missing { color: var(--red); }
+  #check_msg.ok { color: var(--green); }
+  #check_msg.bad { color: var(--red); }
+
+  /* footer */
+  footer {
+    flex: none; display: flex; align-items: center; gap: 8px;
+    padding: 11px 22px 13px;
+    border-top: 0.5px solid var(--sep);
+    background: var(--window);
+  }
+  footer .msg { margin-right: auto; color: var(--secondary); font-size: 11.5px; }
+  footer .msg.bad { color: var(--red); }
+
+  /* model download sheet */
+  dialog.sheet {
+    width: min(420px, calc(100vw - 32px));
+    border: 0.5px solid var(--card-line);
+    border-radius: 12px;
+    padding: 20px 20px 16px;
+    background: var(--card);
+    color: var(--label);
+    box-shadow: 0 18px 50px rgba(0, 0, 0, 0.28), 0 0 0 0.5px rgba(0, 0, 0, 0.08);
+  }
+  dialog.sheet::backdrop { background: rgba(0, 0, 0, 0.22); }
+  .sheet h3 { margin: 0 0 4px; font-size: 15px; font-weight: 600; }
+  .sheet p { margin: 0 0 12px; color: var(--secondary); }
+  .sheet .items { list-style: none; margin: 0 0 4px; padding: 0; }
+  .sheet .items li { display: flex; justify-content: space-between; gap: 12px; padding: 6px 0; border-top: 0.5px solid var(--sep); }
+  .sheet .items li:first-child { border-top: 0; }
+  .sheet .items .size, .sheet .total .size { color: var(--secondary); font-variant-numeric: tabular-nums; }
+  .sheet .total { display: flex; justify-content: space-between; padding: 7px 0 0; border-top: 0.5px solid var(--sep); font-weight: 600; }
+  .sheet .total .size { color: var(--label); }
+  .sheet .where { font-size: 11px; color: var(--secondary); margin: 10px 0 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; -webkit-user-select: text; user-select: text; }
+  .sheet .actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; }
+  .sheet .current { font-weight: 500; margin-bottom: 8px; }
+  .bar { height: 6px; border-radius: 3px; background: var(--switch-off); overflow: hidden; }
+  .bar > div { height: 100%; width: 0; background: var(--accent); border-radius: 3px; transition: width 0.25s linear; }
+  .sheet .numbers { display: flex; justify-content: space-between; gap: 12px; margin-top: 7px; color: var(--secondary); font-size: 11.5px; font-variant-numeric: tabular-nums; }
+  .sheet .error { color: var(--red); margin: 10px 0 0; -webkit-user-select: text; user-select: text; word-break: break-word; }
+  .sheet .reasons { margin: 12px 0 0; -webkit-user-select: text; user-select: text; word-break: break-word; }
+  .sheet .reasons .what { color: var(--red); font-weight: 500; margin-bottom: 6px; }
+  .sheet .reasons ul { margin: 0 0 8px; padding: 0; list-style: none; }
+  .sheet .reasons li { padding: 3px 0 3px 10px; border-left: 2px solid color-mix(in srgb, var(--red) 45%, transparent); margin-bottom: 4px; }
+  .sheet .reasons li b { font-weight: 600; }
+  .sheet .reasons .hint { color: var(--secondary); }
+
+  @media (prefers-reduced-motion: reduce) { input.switch, input.switch::before, summary::before, .bar > div { transition: none; } }
+  @media (max-width: 500px) {
+    .row { flex-wrap: wrap; }
+    .row .ctl.wide { flex: 1 1 100%; }
+    input[type=range] { width: 130px; }
+  }
+</style>
+</head>
+<body>
+<div class="titlebar" data-tauri-drag-region>Settings</div>
+<div class="scroll">
+<main>
+  <div class="hero" data-tauri-drag-region>
+    <img src="app-icon.png" alt="">
+    <div>
+      <h1>UnderText</h1>
+      <div class="state"><span class="dot" id="run_dot"></span><span id="run_state">Checking models…</span></div>
+    </div>
+  </div>
+
+  <div class="banner hidden" id="model_banner">
+    <span id="model_banner_text"></span>
+    <button id="show_models">Show</button>
+    <button id="download_models" class="default hidden">Download…</button>
+  </div>
+
+  <h2>Audio source</h2>
+  <div class="card">
+    <div class="row">
+      <div class="text"><span class="label">Listen to</span></div>
+      <div class="ctl">
+        <div class="segmented" role="radiogroup" aria-label="Listen to">
+          <label><input type="radio" name="source" value="mic"><span>Input device</span></label>
+          <label><input type="radio" name="source" value="wav"><span>Audio file</span></label>
+        </div>
+      </div>
+    </div>
+    <div class="row" data-src="mic">
+      <div class="text"><label for="device">Input device</label></div>
+      <div class="ctl wide">
+        <span class="popup"><select id="device"></select></span>
+        <button id="refresh" class="icon-btn" title="Refresh devices" aria-label="Refresh devices">
+          <svg viewBox="0 0 16 16"><path d="M13 8a5 5 0 1 1-1.5-3.6M13 2.5v3h-3"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="row" data-src="wav">
+      <div class="text"><label for="wav_path">WAV file</label></div>
+      <div class="ctl wide"><input type="text" id="wav_path" spellcheck="false"><button id="pick_wav">Choose…</button></div>
+    </div>
+    <div class="row" data-src="wav">
+      <div class="text"><label for="play">Play audio</label><span class="desc">Subtitles follow playback</span></div>
+      <div class="ctl"><input type="checkbox" class="switch" id="play"></div>
+    </div>
+    <div class="row" data-src="wav">
+      <div class="text"><label for="output_device">Output device</label></div>
+      <div class="ctl wide"><span class="popup"><select id="output_device"></select></span></div>
+    </div>
+  </div>
+  <p class="note" id="mic_note">To caption audio playing on this Mac, such as a meeting or a video, install BlackHole, add it to a Multi-Output Device in Audio MIDI Setup, and select it here.</p>
+
+  <h2>Subtitles</h2>
+  <div class="card">
+    <div class="preview" aria-hidden="true">
+      <div class="band" id="preview">
+        <div class="para">
+          <div class="gutter"><span class="spk">S1</span></div>
+          <div class="texts">
+            <div class="en">So the hardest part was never the design.</div>
+            <div class="zh">所以最难的部分从来不是设计。<span class="faded">而是</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="row">
+      <div class="text"><label for="translate">Translate into Chinese</label>
+        <span class="desc" id="translate_off_hint">English only. The translation models are not loaded, which saves power.</span></div>
+      <div class="ctl"><input type="checkbox" class="switch" id="translate"></div>
+    </div>
+    <div class="row">
+      <div class="text"><span class="label">Layout</span></div>
+      <div class="ctl">
+        <div class="segmented" role="radiogroup" aria-label="Layout">
+          <label><input type="radio" name="layout" value="stacked"><span>Stacked</span></label>
+          <label><input type="radio" name="layout" value="side_by_side"><span>Side by side</span></label>
+        </div>
+      </div>
+    </div>
+    <div class="row">
+      <div class="text"><label for="show_english">Show English</label><span class="desc">Always shown when translation is off</span></div>
+      <div class="ctl"><input type="checkbox" class="switch" id="show_english"></div>
+    </div>
+    <div class="row">
+      <div class="text"><label for="diar_on">Speaker labels</label><span class="desc">Tag each paragraph with S1, S2, …</span></div>
+      <div class="ctl"><input type="checkbox" class="switch" id="diar_on"></div>
+    </div>
+    <div class="row">
+      <div class="text"><label for="font_size">Chinese text size</label></div>
+      <div class="ctl slider"><input type="range" id="font_size" min="14" max="44"><output id="font_size_v"></output></div>
+    </div>
+    <div class="row">
+      <div class="text"><label for="font_size_en">English text size</label></div>
+      <div class="ctl slider"><input type="range" id="font_size_en" min="10" max="44"><output id="font_size_en_v"></output></div>
+    </div>
+    <div class="row">
+      <div class="text"><label for="opacity">Background</label></div>
+      <div class="ctl slider"><input type="range" id="opacity" min="0" max="1" step="0.05"><output id="opacity_v"></output></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="row">
+      <div class="text"><label for="power_saving">Power saving</label>
+        <span class="desc">Runs recognition on the efficiency cores and calls the translation model less often. Subtitles appear slightly later.</span></div>
+      <div class="ctl"><input type="checkbox" class="switch" id="power_saving"></div>
+    </div>
+  </div>
+
+  <details id="advanced">
+    <summary>Advanced</summary>
+
+    <h2>Models</h2>
+    <div class="card" id="models_card">
+      <div class="row">
+        <div class="text"><label for="models_dir">Models folder</label></div>
+        <div class="ctl wide"><input type="text" id="models_dir" spellcheck="false"><button id="pick_models">Choose…</button></div>
+      </div>
+      <div class="row">
+        <div class="text"><span id="check_msg">Checking…</span></div>
+        <div class="ctl"><button id="check">Check again</button></div>
+      </div>
+      <ul class="checks" id="checks"></ul>
+      <div id="translate_rows">
+        <div class="row">
+          <div class="text"><label for="commit_model">Translation model</label><span class="desc">GGUF file in the models folder</span></div>
+          <div class="ctl wide"><input type="text" id="commit_model" spellcheck="false"></div>
+        </div>
+        <div class="row">
+          <div class="text"><label for="draft_on">Instant drafts</label><span class="desc">Show a quick Opus-MT translation until the main model catches up</span></div>
+          <div class="ctl"><input type="checkbox" class="switch" id="draft_on"></div>
+        </div>
+        <div class="row" id="draft_row">
+          <div class="text"><label for="draft_model">Draft model folder</label></div>
+          <div class="ctl wide"><input type="text" id="draft_model" spellcheck="false"></div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="text"><label for="llama_binary">llama-server</label></div>
+        <div class="ctl wide"><input type="text" id="llama_binary" spellcheck="false" placeholder="Found automatically (brew install llama.cpp)"></div>
+      </div>
+    </div>
+
+    <h2>Paragraphs and speakers</h2>
+    <div class="card">
+      <div class="row">
+        <div class="text"><label for="pause_s">New paragraph after a pause of</label></div>
+        <div class="ctl"><input type="number" id="pause_s" min="0.3" max="10" step="0.1"><span class="unit">s</span></div>
+      </div>
+      <div class="row">
+        <div class="text"><label for="split_on_speaker">New paragraph when the speaker changes</label></div>
+        <div class="ctl"><input type="checkbox" class="switch" id="split_on_speaker"></div>
+      </div>
+      <div class="row">
+        <div class="text"><label for="history">Earlier paragraphs to keep</label><span class="desc">Scroll the subtitle window to read them</span></div>
+        <div class="ctl"><input type="number" id="history" min="0" max="200"><span class="unit"></span></div>
+      </div>
+      <div class="row">
+        <div class="text"><label for="max_speakers">Maximum speakers</label><span class="desc">0 for no limit. Set 2 for a two-person interview.</span></div>
+        <div class="ctl"><input type="number" id="max_speakers" min="0" max="20"><span class="unit"></span></div>
+      </div>
+      <div class="row">
+        <div class="text"><label for="threshold">New speaker threshold</label><span class="desc">Lower it if one person is split in two; raise it if two people are merged. Default 0.45.</span></div>
+        <div class="ctl"><input type="number" id="threshold" min="0.1" max="0.8" step="0.05"><span class="unit"></span></div>
+      </div>
+    </div>
+
+    <h2>Recognition</h2>
+    <div class="card">
+      <div class="row">
+        <div class="text"><label for="decode_interval_s">English update interval</label><span class="desc">Shorter is faster but uses more power</span></div>
+        <div class="ctl"><input type="number" id="decode_interval_s" min="0.2" max="2" step="0.1"><span class="unit">s</span></div>
+      </div>
+      <div class="row">
+        <div class="text"><label for="min_silence_s">Sentence-end silence</label></div>
+        <div class="ctl"><input type="number" id="min_silence_s" min="0.2" max="2" step="0.05"><span class="unit">s</span></div>
+      </div>
+      <div class="row">
+        <div class="text"><label for="log_path">Latency log</label><span class="desc">For undertext-cli report</span></div>
+        <div class="ctl wide"><input type="text" id="log_path" spellcheck="false" placeholder="Off, e.g. ~/undertext-log.jsonl"></div>
+      </div>
+    </div>
+  </details>
+</main>
+</div>
+
+<footer>
+  <span class="msg" id="msg"></span>
+  <button id="save_start" class="default">Save and Restart</button>
+</footer>
+
+<dialog class="sheet" id="dl">
+  <div id="dl_ask">
+    <h3>Download models</h3>
+    <p>UnderText runs these models on your Mac. They are downloaded once; after that nothing goes over the network.</p>
+    <ul class="items" id="dl_items"></ul>
+    <div class="total"><span>Total</span><span class="size" id="dl_total"></span></div>
+    <div class="where" id="dl_where"></div>
+    <p class="error hidden" id="dl_unknown"></p>
+    <div class="actions">
+      <button id="dl_later">Not Now</button>
+      <button id="dl_go" class="default">Download</button>
+    </div>
+  </div>
+  <div id="dl_run" class="hidden">
+    <h3 id="dl_title">Downloading models</h3>
+    <p id="dl_note">You can close this window. The download keeps going, and it picks up where it left off if it stops.</p>
+    <div class="current" id="dl_current">Starting…</div>
+    <div class="bar"><div id="dl_bar"></div></div>
+    <div class="numbers"><span id="dl_bytes"></span><span id="dl_speed"></span></div>
+    <div class="reasons hidden" id="dl_error"></div>
+    <div class="actions">
+      <button id="dl_cancel">Cancel</button>
+      <button id="dl_retry" class="default hidden">Try Again</button>
+    </div>
+  </div>
+</dialog>
+
+<script>
+  const { invoke } = window.__TAURI__.core;
+  const $ = (id) => document.getElementById(id);
+  let cfg = null;
+  let missing = null;
+  let missingNames = [];
+  let status = { running: false };
+  let baseline = ''; // the form as last loaded or saved, to detect unsaved changes
+  // config floats are f32 on the Rust side: show 0.65, not 0.64999997
+  const num = (x) => Number(Number(x).toFixed(3));
+  const LABELS = {
+    'ASR encoder': 'Speech encoder', 'ASR decoder': 'Speech decoder', 'ASR joiner': 'Speech joiner',
+    'ASR tokens': 'Speech tokens', 'Silero VAD': 'Voice activity (VAD)', 'commit LLM': 'Translation model',
+    'draft model': 'Draft model', 'speaker model': 'Speaker model',
+  };
+
+  function setMsg(text, bad) {
+    $('msg').textContent = text;
+    $('msg').classList.toggle('bad', !!bad);
+  }
+
+  // separators: every visible row except the first in its card
+  function markFirstRows() {
+    document.querySelectorAll('.card').forEach((card) => {
+      let first = true;
+      card.querySelectorAll('.row').forEach((r) => {
+        const visible = r.getClientRects().length > 0;
+        r.classList.toggle('first', visible && first);
+        if (visible) first = false;
+      });
+    });
+  }
+
+  function fillSelect(sel, names, current, defaultLabel) {
+    sel.replaceChildren();
+    const def = document.createElement('option');
+    def.value = '';
+    def.textContent = defaultLabel;
+    sel.append(def);
+    const all = [...names];
+    if (current && !all.includes(current)) all.push(current);
+    for (const n of all) {
+      const o = document.createElement('option');
+      o.value = n;
+      o.textContent = n;
+      sel.append(o);
+    }
+    sel.value = current || '';
+  }
+
+  async function loadDevices() {
+    try {
+      const d = await invoke('list_devices');
+      fillSelect($('device'), d.inputs, cfg.audio.device, 'System default');
+      fillSelect($('output_device'), d.outputs, cfg.audio.output_device, 'System default');
+    } catch (e) {
+      setMsg('Could not read audio devices: ' + e, true);
+    }
+  }
+
+  function paintRange(r) {
+    r.style.setProperty('--p', ((r.value - r.min) / (r.max - r.min)) * 100 + '%');
+  }
+
+  function syncPreview() {
+    const p = $('preview');
+    // the preview is smaller than the real window
+    const scale = (v) => Math.round(Math.min(30, Math.max(9, v * 0.75)));
+    const zh = scale($('font_size').value), en = scale($('font_size_en').value);
+    p.style.setProperty('--zh-size', zh + 'px');
+    p.style.setProperty('--en-size', en + 'px');
+    p.style.setProperty('--main-size', ($('translate').checked ? zh : en) + 'px');
+    p.style.setProperty('--band', $('opacity').value);
+    p.classList.toggle('no-zh', !$('translate').checked);
+    p.classList.toggle('no-en', $('translate').checked && !$('show_english').checked);
+    p.classList.toggle('no-spk', !$('diar_on').checked);
+    p.classList.toggle('side', document.querySelector('input[name=layout]:checked').value === 'side_by_side');
+  }
+
+  function syncVisibility() {
+    const src = document.querySelector('input[name=source]:checked').value;
+    document.querySelectorAll('[data-src]').forEach((r) => r.classList.toggle('hidden', r.dataset.src !== src));
+    $('mic_note').classList.toggle('hidden', src !== 'mic');
+    const tr = $('translate').checked;
+    $('translate_rows').classList.toggle('hidden', !tr);
+    $('translate_off_hint').classList.toggle('hidden', tr);
+    $('draft_row').classList.toggle('hidden', !$('draft_on').checked);
+    // without Chinese the English line is the subtitle, so it can't be hidden
+    $('show_english').disabled = !tr;
+    if (!tr) $('show_english').checked = true;
+    $('font_size_v').textContent = $('font_size').value + ' px';
+    $('font_size_en_v').textContent = $('font_size_en').value + ' px';
+    paintRange($('font_size_en'));
+    $('opacity_v').textContent = Math.round($('opacity').value * 100) + '%';
+    paintRange($('font_size'));
+    paintRange($('opacity'));
+    syncPreview();
+    markFirstRows();
+  }
+
+  function toForm(c) {
+    $('models_dir').value = c.models_dir;
+    $('translate').checked = c.translate;
+    $('commit_model').value = c.commit.model;
+    $('draft_on').checked = c.draft.backend !== 'none';
+    $('draft_model').value = c.draft.model_dir;
+    $('llama_binary').value = c.llama_server.binary;
+    document.querySelector(`input[name=source][value=${c.audio.source}]`).checked = true;
+    (document.querySelector(`input[name=layout][value=${c.ui.layout}]`) || document.querySelector('input[name=layout]')).checked = true;
+    $('wav_path').value = c.audio.wav_path;
+    $('play').checked = c.audio.play;
+    $('font_size').value = c.ui.font_size;
+    $('font_size_en').value = c.ui.font_size_en;
+    $('opacity').value = num(c.ui.opacity);
+    $('history').value = c.ui.history;
+    $('pause_s').value = num(c.ui.paragraphs.pause_s);
+    $('split_on_speaker').checked = c.ui.paragraphs.split_on_speaker;
+    $('show_english').checked = c.ui.show_english;
+    $('diar_on').checked = c.diarization.enabled;
+    $('max_speakers').value = c.diarization.max_speakers;
+    $('threshold').value = num(c.diarization.new_speaker_threshold);
+    $('decode_interval_s').value = num(c.asr.decode_interval_s);
+    $('min_silence_s').value = num(c.asr.min_silence_s);
+    $('log_path').value = c.ui.log_path;
+    $('power_saving').checked = c.performance.power_saving;
+    syncVisibility();
+  }
+
+  function fromForm() {
+    const c = structuredClone(cfg);
+    c.models_dir = $('models_dir').value.trim();
+    c.translate = $('translate').checked;
+    c.commit.model = $('commit_model').value.trim();
+    c.draft.backend = $('draft_on').checked ? 'opus-mt' : 'none';
+    c.draft.model_dir = $('draft_model').value.trim();
+    c.llama_server.binary = $('llama_binary').value.trim();
+    c.audio.source = document.querySelector('input[name=source]:checked').value;
+    c.ui.layout = document.querySelector('input[name=layout]:checked').value;
+    c.audio.device = $('device').value;
+    c.audio.wav_path = $('wav_path').value.trim();
+    c.audio.play = $('play').checked;
+    c.audio.output_device = $('output_device').value;
+    c.ui.font_size = parseInt($('font_size').value, 10);
+    c.ui.font_size_en = parseInt($('font_size_en').value, 10);
+    c.ui.opacity = parseFloat($('opacity').value);
+    c.ui.history = parseInt($('history').value, 10) || 0;
+    c.ui.paragraphs.pause_s = parseFloat($('pause_s').value) || 1.2;
+    c.ui.paragraphs.split_on_speaker = $('split_on_speaker').checked;
+    c.ui.show_english = $('show_english').checked;
+    c.diarization.enabled = $('diar_on').checked;
+    c.diarization.max_speakers = parseInt($('max_speakers').value, 10) || 0;
+    c.diarization.new_speaker_threshold = parseFloat($('threshold').value) || 0.45;
+    c.asr.decode_interval_s = parseFloat($('decode_interval_s').value) || 0.5;
+    c.asr.min_silence_s = parseFloat($('min_silence_s').value) || 0.4;
+    c.ui.log_path = $('log_path').value.trim();
+    c.performance.power_saving = $('power_saving').checked;
+    return c;
+  }
+
+  function renderHeader() {
+    const dot = $('run_dot');
+    dot.className = 'dot';
+    let text;
+    if (status.error) { dot.classList.add('bad'); text = 'Something went wrong. Check the subtitle window for details.'; }
+    else if (status.running) { dot.classList.add('live'); text = status.message || 'Running'; }
+    else if (missing === null) { text = 'Checking models…'; }
+    else if (missing) { dot.classList.add('bad'); text = missing === 1 ? '1 item missing' : `${missing} items missing`; }
+    else { dot.classList.add('ok'); text = 'Ready'; }
+    $('run_state').textContent = text;
+    $('model_banner').classList.toggle('hidden', !missing);
+    if (missing) {
+      $('model_banner_text').textContent = missingNames.length === 1 && missingNames[0] === LABELS['draft model']
+        ? 'Draft model not found. Subtitles still work, without instant drafts.'
+        : 'Not found: ' + missingNames.join(', ') + '.';
+    }
+  }
+
+  async function check() {
+    $('check_msg').textContent = 'Checking…';
+    $('check_msg').className = '';
+    const res = await invoke('check_setup', { config: fromForm() });
+    const ul = $('checks');
+    ul.replaceChildren();
+    const add = (ok, what, path) => {
+      const li = document.createElement('li');
+      li.innerHTML = `<span class="mark ${ok ? 'ok' : 'bad'}">${ok ? '✓' : '✕'}</span><span class="what"></span><span class="path"></span>`;
+      li.children[1].textContent = what;
+      // rtl keeps the end of a long path visible; the bdi stops it from reordering the text
+      const bdi = document.createElement('bdi');
+      bdi.textContent = ok ? path : 'Missing: ' + path;
+      li.children[2].append(bdi);
+      li.children[2].title = path;
+      li.children[2].classList.toggle('missing', !ok);
+      ul.append(li);
+    };
+    res.models.forEach((m) => add(m.ok, LABELS[m.what] || m.what, m.path));
+    if (res.llama_server.Ok) add(true, 'llama-server', res.llama_server.Ok);
+    else add(false, 'llama-server', res.llama_server.Err);
+    missingNames = res.models.filter((m) => !m.ok).map((m) => LABELS[m.what] || m.what);
+    if (!res.llama_server.Ok) missingNames.push('llama-server');
+    missing = missingNames.length;
+    const total = res.models.length + 1;
+    $('check_msg').textContent = missing ? `${total - missing} of ${total} found` : `All ${total} found`;
+    $('check_msg').className = missing ? 'bad' : 'ok';
+    renderHeader();
+    return missing;
+  }
+
+  function markClean() {
+    baseline = JSON.stringify(fromForm());
+    setMsg('');
+  }
+
+  function updateDirty() {
+    if (!cfg) return;
+    const dirty = JSON.stringify(fromForm()) !== baseline;
+    if (dirty) setMsg('Unsaved changes');
+    else if ($('msg').textContent === 'Unsaved changes') setMsg('');
+  }
+
+  async function save() {
+    cfg = fromForm();
+    await invoke('save_config', { config: cfg });
+    markClean();
+  }
+
+  $('pick_models').onclick = async () => {
+    const p = await invoke('pick_folder');
+    if (p) { $('models_dir').value = p; check().then(loadPlan); }
+  };
+  $('pick_wav').onclick = async () => {
+    const p = await invoke('pick_wav');
+    if (p) $('wav_path').value = p;
+  };
+  $('check').onclick = () => check().then(loadPlan);
+  $('refresh').onclick = loadDevices;
+  $('show_models').onclick = () => {
+    $('advanced').open = true;
+    markFirstRows();
+    $('models_card').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+  $('advanced').addEventListener('toggle', markFirstRows);
+  document.querySelectorAll('input[name=source], input[name=layout]').forEach((r) => (r.onchange = syncVisibility));
+  // preview the layout on the subtitle window right away
+  document.querySelectorAll('input[name=layout]').forEach((r) =>
+    r.addEventListener('change', () => window.__TAURI__.event.emit('config', fromForm())));
+  ['translate', 'draft_on', 'font_size', 'font_size_en', 'opacity', 'show_english', 'diar_on'].forEach((id) => ($(id).oninput = syncVisibility));
+  // preview appearance on the overlay while dragging the sliders
+  ['font_size', 'font_size_en', 'opacity', 'show_english'].forEach((id) =>
+    $(id).addEventListener('change', () => window.__TAURI__.event.emit('config', fromForm())));
+  document.addEventListener('input', updateDirty);
+  document.addEventListener('change', updateDirty);
+  $('save_start').onclick = async () => {
+    try {
+      await save();
+      await invoke('stop');
+      // false: models are missing and the download dialog is up, so stay open
+      if (await invoke('start')) window.__TAURI__.window.getCurrentWindow().hide();
+    } catch (e) {
+      setMsg('Could not start: ' + e, true);
+    }
+  };
+
+
+  // --- model download -------------------------------------------------------------------
+  let plan = null;
+  let downloading = false;
+  const fmtSize = (b) => b >= 1e9 ? (b / 1e9).toFixed(2) + ' GB' : b >= 1e6 ? Math.round(b / 1e6) + ' MB' : Math.max(1, Math.round(b / 1e3)) + ' KB';
+  const fmtTime = (s) => s < 60 ? 'less than a minute left' : s < 3600 ? `about ${Math.round(s / 60)} min left` : `about ${(s / 3600).toFixed(1)} h left`;
+
+  async function loadPlan() {
+    try { plan = await invoke('download_plan', { config: fromForm() }); } catch (e) { plan = null; }
+    $('download_models').classList.toggle('hidden', !plan || !plan.items.length || downloading);
+    return plan;
+  }
+
+  function showAsk() {
+    $('dl_items').replaceChildren(...plan.items.map((i) => {
+      const li = document.createElement('li');
+      li.innerHTML = '<span></span><span class="size"></span>';
+      li.children[0].textContent = i.label;
+      li.children[1].textContent = fmtSize(i.size);
+      return li;
+    }));
+    $('dl_total').textContent = fmtSize(plan.total);
+    $('dl_where').textContent = 'Saved to ' + $('models_dir').value;
+    $('dl_where').title = $('models_dir').value;
+    $('dl_unknown').classList.toggle('hidden', !plan.unknown.length);
+    $('dl_unknown').textContent = plan.unknown.length
+      ? 'Not on the download list (set in Advanced): ' + plan.unknown.map((p) => p.split('/').pop()).join(', ') : '';
+    $('dl_ask').classList.remove('hidden');
+    $('dl_run').classList.add('hidden');
+    if (!$('dl').open) $('dl').showModal();
+    $('dl_go').focus();
+  }
+
+  function showRun() {
+    $('dl_ask').classList.add('hidden');
+    $('dl_run').classList.remove('hidden');
+    $('dl_error').classList.add('hidden');
+    $('dl_retry').classList.add('hidden');
+    $('dl_cancel').textContent = 'Cancel';
+    $('dl_title').textContent = 'Downloading models';
+    $('dl_note').classList.remove('hidden');
+    if (!$('dl').open) $('dl').showModal();
+  }
+
+  async function startDownload() {
+    downloading = true;
+    $('download_models').classList.add('hidden');
+    showRun();
+    $('dl_current').textContent = 'Starting…';
+    $('dl_bar').style.width = '0';
+    $('dl_bytes').textContent = '';
+    $('dl_speed').textContent = '';
+    await invoke('download_start', { config: fromForm() });
+  }
+
+  function onProgress(p) {
+    if (!$('dl').open || $('dl_run').classList.contains('hidden')) showRun();
+    const frac = p.total ? p.done / p.total : 0;
+    $('dl_bar').style.width = (frac * 100).toFixed(1) + '%';
+    $('dl_bytes').textContent = `${fmtSize(p.done)} of ${fmtSize(p.total)}`;
+    if (p.state === 'running') {
+      $('dl_current').textContent = p.label;
+      $('dl_speed').textContent = p.bytes_per_s > 0
+        ? `${(p.bytes_per_s / 1e6).toFixed(1)} MB/s, ${fmtTime((p.total - p.done) / p.bytes_per_s)}` : '';
+      return;
+    }
+    downloading = false;
+    $('dl_speed').textContent = '';
+    if (p.state === 'done') {
+      $('dl').close();
+      setMsg('Models downloaded.');
+      check().then(loadPlan);
+    } else if (p.state === 'cancelled') {
+      $('dl').close();
+      setMsg('Download cancelled. What was downloaded so far is kept.');
+      loadPlan();
+    } else {
+      $('dl_title').textContent = 'Download stopped';
+      $('dl_note').classList.add('hidden');
+      loadPlan();
+      $('dl_current').textContent = p.label;
+      // first line: what failed; "server: reason" lines; last line: what to do
+      const lines = p.message.split('\n').filter(Boolean);
+      const box = $('dl_error');
+      box.replaceChildren();
+      const what = document.createElement('div');
+      what.className = 'what';
+      what.textContent = lines[0];
+      box.append(what);
+      if (lines.length > 1) {
+        const servers = lines.slice(1, -1);
+        if (servers.length) {
+          const ul = document.createElement('ul');
+          for (const l of servers) {
+            const li = document.createElement('li');
+            const i = l.indexOf(': ');
+            if (i > 0 && !l.slice(0, i).includes(' ')) {
+              const b = document.createElement('b');
+              b.textContent = l.slice(0, i);
+              li.append(b, ': ' + l.slice(i + 2));
+            } else li.textContent = l;
+            ul.append(li);
+          }
+          box.append(ul);
+        }
+        const hint = document.createElement('div');
+        hint.className = 'hint';
+        hint.textContent = lines[lines.length - 1];
+        box.append(hint);
+      }
+      $('dl_error').classList.remove('hidden');
+      $('dl_retry').classList.remove('hidden');
+      $('dl_cancel').textContent = 'Close';
+    }
+  }
+
+  $('download_models').onclick = async () => { if (await loadPlan()) showAsk(); };
+  $('dl_later').onclick = () => $('dl').close();
+  $('dl_go').onclick = startDownload;
+  $('dl_retry').onclick = startDownload;
+  $('dl_cancel').onclick = () => {
+    if (downloading) invoke('download_cancel');
+    else $('dl').close();
+  };
+  // Esc: close the question, but don't drop a running download by accident
+  $('dl').addEventListener('cancel', (e) => { if (downloading) e.preventDefault(); });
+  window.__TAURI__.event.listen('download', (e) => onProgress(e.payload));
+  // Start pressed (subtitle window or menu bar) while models are missing
+  window.__TAURI__.event.listen('offer_download', async () => {
+    if (downloading) { if (!$('dl').open) showRun(); return; }
+    if ((await loadPlan()) && plan.items.length) showAsk();
+  });
+
+  invoke('get_config').then(async (c) => {
+    cfg = c;
+    toForm(c);
+    markClean();
+    loadDevices().then(markClean);
+    await check();
+    // first run (or models deleted): offer the download straight away
+    if ((await loadPlan()) && plan.items.length) showAsk();
+  });
+  invoke('get_status').then((s) => { status = s; renderHeader(); }).catch(() => {});
+  window.__TAURI__.event.listen('status', (e) => { status = e.payload; renderHeader(); });
+</script>
+</body>
+</html>

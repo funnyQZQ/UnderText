@@ -1,0 +1,356 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>UnderText</title>
+<style>
+  :root {
+    --ink: 20, 26, 38;          /* #141A26, band behind the text */
+    --band-opacity: 0.55;
+    --en: #AEB7C4;
+    --zh: #F5F7FA;
+    --amber: #F4B440;
+    --zh-size: 22px;
+    --en-size: 15px;
+    --cjk: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif;
+    --latin: -apple-system, "SF Pro Text", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  }
+  html, body {
+    margin: 0;
+    height: 100%;
+    background: transparent;
+    overflow: hidden;
+    -webkit-user-select: none;
+    user-select: none;
+    cursor: default;
+  }
+  /* the whole band is the drag handle; text ignores the pointer so drags start anywhere */
+  .band {
+    position: absolute;
+    inset: 0;
+    border-radius: 14px;
+    background: rgba(var(--ink), var(--band-opacity));
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 12px 22px 14px;
+    box-sizing: border-box;
+    gap: 8px;
+  }
+  .lines, .para, .status { pointer-events: none; }
+  /* fills the band and scrolls (mouse wheel / trackpad over the band); #content sits at
+     the bottom while it is shorter than the band */
+  .lines { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; overflow-y: auto; scrollbar-width: none; }
+  .lines::-webkit-scrollbar { display: none; }
+  .lines.overflow { -webkit-mask-image: linear-gradient(transparent, #000 28px); mask-image: linear-gradient(transparent, #000 28px); }
+  #content { margin-top: auto; display: flex; flex-direction: column; gap: 10px; }
+  .para { display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: 10px; }
+  .para.past { opacity: 0.62; }
+  .texts { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  /* English left, Chinese right */
+  .side .texts { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: 22px; align-items: start; }
+  .side.no-zh .texts, .side.hide-en:not(.no-zh) .texts { display: flex; }
+  .gutter { display: none; }
+  /* speaker labels follow the main subtitle line: Chinese, or English when translation is off */
+  body { --main-size: var(--zh-size); }
+  body.no-zh { --main-size: var(--en-size); }
+  .labels .gutter { display: block; min-width: calc(var(--main-size) * 1.45); }
+  .en {
+    font: 500 var(--en-size)/1.35 var(--latin);
+    color: var(--en);
+    letter-spacing: 0.005em;
+  }
+  .zh {
+    font: 600 var(--zh-size)/1.4 var(--cjk);
+    color: var(--zh);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+  }
+  .zh:empty { display: none; }
+  .tentative { opacity: 0.5; }
+  .speaker {
+    display: inline-block;
+    font: 600 calc(var(--main-size) * 0.5)/1 var(--latin);
+    padding: 3px 6px;
+    margin-top: calc(var(--main-size) * 0.12);
+    border-radius: 4px;
+    color: rgb(var(--ink));
+    background: var(--amber);
+  }
+  .speaker.s2 { background: #7FC8F8; }
+  .speaker.s3 { background: #B9E28C; }
+  .speaker.s4 { background: #F49FBC; }
+  .speaker.s5 { background: #C3B1E1; }
+  .hide-en:not(.no-zh) .en { display: none; }
+  /* translation off: English becomes the main subtitle line */
+  .no-zh .zh { display: none; }
+  .no-zh .en { font: 600 var(--en-size)/1.4 var(--latin); color: var(--zh); text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45); }
+
+  .status {
+    font: 500 14px/1.4 var(--latin);
+    color: var(--en);
+    text-align: center;
+    align-self: center;
+    margin: auto 0;
+    max-width: 90%;
+  }
+  .status strong { color: var(--zh); font-weight: 600; }
+  .status.error { color: #FFB4A9; white-space: pre-wrap; text-align: left; font-size: 12.5px; }
+
+  .controls {
+    position: absolute;
+    top: 8px;
+    right: 10px;
+    display: flex;
+    gap: 6px;
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+  body:hover .controls, .controls:focus-within { opacity: 1; }
+  .locked .controls { display: none; }
+  button {
+    all: unset;
+    width: 28px;
+    height: 28px;
+    border-radius: 7px;
+    display: grid;
+    place-items: center;
+    color: var(--zh);
+    background: rgba(255, 255, 255, 0.12);
+    cursor: pointer;
+  }
+  button:hover { background: rgba(255, 255, 255, 0.22); }
+  button:focus-visible { outline: 2px solid var(--amber); outline-offset: 1px; }
+  button.on { background: var(--amber); color: rgb(var(--ink)); }
+  svg { width: 15px; height: 15px; fill: currentColor; }
+  svg.line { fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+  .toast {
+    position: absolute;
+    left: 50%;
+    top: 10px;
+    transform: translateX(-50%);
+    max-width: 70%;
+    padding: 5px 12px;
+    border-radius: 8px;
+    font: 500 12.5px/1.35 var(--latin);
+    color: var(--zh);
+    background: rgba(var(--ink), 0.92);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    pointer-events: none;
+    transition: opacity 0.2s;
+  }
+  .toast[hidden] { display: block; opacity: 0; }
+  .latest {
+    position: absolute;
+    right: 14px;
+    bottom: 10px;
+    width: auto;
+    height: auto;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font: 600 12px/1 var(--latin);
+    color: rgb(var(--ink));
+    background: var(--amber);
+  }
+  .latest:hover { background: #F7C567; }
+  .latest[hidden] { display: none; }
+  @media (prefers-reduced-motion: reduce) { .controls { transition: none; } }
+</style>
+</head>
+<body>
+  <div class="band" data-tauri-drag-region>
+    <div class="status" id="status">Click <strong>▶</strong> to start subtitles. Drag here to move the window.</div>
+    <div class="lines" id="lines"><div id="content"></div></div>
+    <button class="latest" id="latest" hidden>↓ Latest</button>
+  </div>
+  <div class="toast" id="toast" role="status" hidden></div>
+  <div class="controls">
+    <button id="toggle" title="Start subtitles" aria-label="Start subtitles">
+      <svg viewBox="0 0 16 16" id="icon-play"><path d="M4 2.5v11l9-5.5z"/></svg>
+    </button>
+    <button id="clear" title="Clear the subtitle window" aria-label="Clear subtitles">
+      <svg viewBox="0 0 16 16" class="line"><path d="M3 4.5h10M6.5 4.5V3h3v1.5M4.5 4.5l.6 8.5h5.8l.6-8.5"/></svg>
+    </button>
+    <button id="save" title="Save subtitles to a file" aria-label="Save subtitles">
+      <svg viewBox="0 0 16 16" class="line"><path d="M8 2.5v7.5M5 7l3 3 3-3M3 12.5h10"/></svg>
+    </button>
+    <button id="settings" title="Settings" aria-label="Settings">
+      <svg viewBox="0 0 16 16"><path d="M9.4 1l.4 2 .9.4 1.7-1.1 1.4 1.4-1.1 1.7.4.9 2 .4v2l-2 .4-.4.9 1.1 1.7-1.4 1.4-1.7-1.1-.9.4-.4 2h-2l-.4-2-.9-.4-1.7 1.1-1.4-1.4 1.1-1.7-.4-.9-2-.4v-2l2-.4.4-.9-1.1-1.7 1.4-1.4 1.7 1.1.9-.4.4-2zM8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5z"/></svg>
+    </button>
+  </div>
+<script>
+  const { invoke } = window.__TAURI__.core;
+  const { listen } = window.__TAURI__.event;
+  const $ = (id) => document.getElementById(id);
+  const PLAY = '<path d="M4 2.5v11l9-5.5z"/>';
+  const STOP = '<path d="M3.5 3.5h9v9h-9z"/>';
+  let running = false;
+  let hasLines = false;
+
+  function el(tag, cls, text) {
+    const e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text) e.textContent = text;
+    return e;
+  }
+
+  // A paragraph = consecutive sentences of one speaker without a long pause. The speaker
+  // label sits in a gutter on the left, so it belongs to both the English and the Chinese.
+  function paragraphEl(p, past) {
+    const box = el('div', 'para' + (past ? ' past' : ''));
+    const gutter = el('div', 'gutter');
+    if (p.speaker) {
+      const n = parseInt(p.speaker.replace(/\D/g, ''), 10) || 1;
+      gutter.append(el('span', 'speaker s' + (((n - 1) % 5) + 1), p.speaker));
+    }
+    const texts = el('div', 'texts');
+    const en = el('div', 'en');
+    const zh = el('div', 'zh');
+    let enText = '';
+    for (const s of p.sentences) {
+      if (s.en_stable) {
+        en.append(document.createTextNode((enText ? ' ' : '') + s.en_stable));
+        enText += s.en_stable;
+      }
+      if (s.en_unstable) {
+        en.append(el('span', 'tentative', (enText ? ' ' : '') + s.en_unstable));
+        enText += s.en_unstable;
+      }
+      zh.append(document.createTextNode(s.zh_stable));
+      if (s.zh_unstable) zh.append(el('span', 'tentative', s.zh_unstable));
+    }
+    texts.append(en, zh);
+    box.append(gutter, texts);
+    return box;
+  }
+
+  // id (first sentence) -> { p: paragraph, el: element }; only changed paragraphs are rebuilt
+  const paras = new Map();
+  let order = [];
+  // "clear" hides every sentence up to this id; what is still being spoken stays
+  let clearedUpTo = -1;
+  const lines = $('lines');
+  const atBottom = () => lines.scrollHeight - lines.scrollTop - lines.clientHeight < 4;
+
+  function applyUpdate(u) {
+    if (u.reset) {
+      paras.clear();
+      clearedUpTo = -1;
+    }
+    for (const c of u.changed) paras.set(c.id, { p: c, el: null });
+    order = u.order.filter((id) => paras.has(id));
+    for (const id of [...paras.keys()]) if (!order.includes(id)) paras.delete(id);
+    renderLines();
+  }
+
+  // Follows the newest text unless the user has scrolled up to read earlier paragraphs.
+  function renderLines(rebuildAll) {
+    const follow = atBottom();
+    const visible = order.filter((id) => paras.get(id).p.sentences.some((s) => s.sid > clearedUpTo));
+    hasLines = visible.length > 0;
+    $('status').style.display = hasLines || order.length ? 'none' : '';
+    const els = visible.map((id, i) => {
+      const x = paras.get(id);
+      const past = i < visible.length - 1;
+      if (!x.el || rebuildAll || x.past !== past || x.cleared !== clearedUpTo) {
+        const p = x.p.sentences[0].sid > clearedUpTo ? x.p : { ...x.p, sentences: x.p.sentences.filter((s) => s.sid > clearedUpTo) };
+        x.el = paragraphEl(p, past);
+        x.past = past;
+        x.cleared = clearedUpTo;
+      }
+      return x.el;
+    });
+    const content = $('content');
+    if (els.length !== content.children.length || els.some((e, i) => content.children[i] !== e)) {
+      content.replaceChildren(...els);
+    }
+    if (follow) lines.scrollTop = lines.scrollHeight;
+    updateScrollUi();
+  }
+
+  function updateScrollUi() {
+    lines.classList.toggle('overflow', lines.scrollTop > 0);
+    $('latest').hidden = atBottom();
+  }
+
+  // the text ignores the pointer (so the band can be dragged anywhere): scroll it from the band
+  document.querySelector('.band').addEventListener('wheel', (e) => {
+    lines.scrollTop += e.deltaY;
+    updateScrollUi();
+  }, { passive: true });
+  lines.addEventListener('scroll', updateScrollUi);
+  $('latest').onclick = () => { lines.scrollTop = lines.scrollHeight; updateScrollUi(); };
+
+  function renderStatus(s) {
+    running = s.running;
+    $('icon-play').innerHTML = running ? STOP : PLAY;
+    $('toggle').title = running ? 'Stop subtitles' : 'Start subtitles';
+    $('toggle').setAttribute('aria-label', $('toggle').title);
+    $('toggle').classList.toggle('on', running);
+    const st = $('status');
+    st.classList.toggle('error', !!s.error);
+    if (s.error) {
+      st.textContent = s.error;
+      st.style.display = '';
+      return;
+    }
+    if (!hasLines) {
+      st.innerHTML = '';
+      st.append(document.createTextNode(s.running ? s.message : 'Click '));
+      if (!s.running) {
+        st.append(el('strong', '', '▶'));
+        st.append(document.createTextNode(' to start subtitles. Drag here to move the window.'));
+      }
+      if (s.warnings && s.warnings.length) st.append(el('div', '', s.warnings.join('; ')));
+    }
+  }
+
+  function applyConfig(cfg) {
+    const r = document.documentElement.style;
+    r.setProperty('--zh-size', cfg.ui.font_size + 'px');
+    r.setProperty('--en-size', (cfg.ui.font_size_en || 15) + 'px');
+    r.setProperty('--band-opacity', cfg.ui.opacity);
+    document.body.classList.toggle('hide-en', !cfg.ui.show_english);
+    document.body.classList.toggle('no-zh', cfg.translate === false);
+    document.body.classList.toggle('side', cfg.ui.layout === 'side_by_side');
+    document.body.classList.toggle('labels', !!cfg.diarization.enabled);
+    renderLines(true);
+  }
+
+  $('toggle').onclick = () => (running ? invoke('stop') : invoke('start').catch((e) => renderStatus({ running: false, error: String(e) })));
+  $('settings').onclick = () => invoke('open_settings');
+  let toastTimer = null;
+  function toast(text) {
+    const t = $('toast');
+    t.textContent = text;
+    t.title = text;
+    t.hidden = false;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => (t.hidden = true), 3000);
+  }
+  $('clear').onclick = () => {
+    // keep the sentence still being spoken; clear everything before it
+    let last = -1;
+    for (const id of order) for (const s of paras.get(id).p.sentences) if (s.is_final) last = Math.max(last, s.sid);
+    clearedUpTo = last;
+    renderLines(true);
+  };
+  $('save').onclick = () =>
+    invoke('save_transcript', { after: clearedUpTo })
+      .then((path) => path && toast('Saved to ' + path))
+      .catch((e) => toast(String(e)));
+
+  listen('subtitles', (e) => applyUpdate(e.payload));
+  window.addEventListener('resize', () => updateScrollUi());
+  listen('status', (e) => renderStatus(e.payload));
+  listen('config', (e) => applyConfig(e.payload));
+  listen('click-through', (e) => document.body.classList.toggle('locked', e.payload));
+
+  invoke('get_config').then(applyConfig);
+  invoke('get_status').then(renderStatus);
+</script>
+</body>
+</html>

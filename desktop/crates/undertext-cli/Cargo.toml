@@ -1,0 +1,24 @@
+[package]
+name = "undertext-cli"
+description = "UnderText command-line tools: headless runs, soak tests, model comparison, diagnostics"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[[bin]]
+name = "undertext-cli"
+path = "src/main.rs"
+
+[dependencies]
+undertext-core = { path = "../undertext-core" }
+undertext-engines = { path = "../undertext-engines" }
+anyhow.workspace = true
+log.workspace = true
+serde_json.workspace = true
+clap = { version = "4", features = ["derive"] }
+env_logger = "0.11"
+ctrlc = "3"
+
+[features]
+default = ["opus-mt"]
+opus-mt = ["undertext-engines/opus-mt"]

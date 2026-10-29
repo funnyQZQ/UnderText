@@ -1,0 +1,206 @@
+{
+  "schema_version": 1,
+  "diagram_type": "dataflow",
+  "meta": {
+    "title": "UnderText pipeline",
+    "locale": "en",
+    "output": "undertext-pipeline.html",
+    "quality_profile": "showcase"
+  },
+  "stages": [
+    {
+      "label": "Capture"
+    },
+    {
+      "label": "Recognize"
+    },
+    {
+      "label": "Text"
+    },
+    {
+      "label": "Translate"
+    },
+    {
+      "label": "Show"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "audio",
+      "type": "frontend",
+      "label": "Audio in",
+      "stage": 0,
+      "row": 0,
+      "sublabel": "mic, BlackHole, WAV",
+      "tag": "16 kHz mono"
+    },
+    {
+      "id": "vad",
+      "type": "backend",
+      "label": "Silero VAD",
+      "stage": 0,
+      "row": 1,
+      "sublabel": "finds speech",
+      "tag": "ends at 0.4 s pause or 20 s"
+    },
+    {
+      "id": "asr",
+      "type": "backend",
+      "label": "Parakeet-TDT",
+      "stage": 1,
+      "row": 1,
+      "sublabel": "re-transcribes every 0.5 s",
+      "tag": "less often if it falls behind"
+    },
+    {
+      "id": "spk",
+      "type": "backend",
+      "label": "TitaNet",
+      "stage": 1,
+      "row": 3,
+      "sublabel": "compares voice prints",
+      "tag": "while speaking and at the end"
+    },
+    {
+      "id": "stab",
+      "type": "backend",
+      "label": "Stabilizer",
+      "stage": 2,
+      "row": 1,
+      "sublabel": "2 runs must agree"
+    },
+    {
+      "id": "sent",
+      "type": "backend",
+      "label": "Sentences",
+      "stage": 2,
+      "row": 2,
+      "sublabel": "punctuation or pause"
+    },
+    {
+      "id": "opus",
+      "type": "backend",
+      "label": "Opus-MT",
+      "stage": 3,
+      "row": 1,
+      "sublabel": "quick draft, CPU",
+      "tag": "until Qwen catches up"
+    },
+    {
+      "id": "qwen",
+      "type": "backend",
+      "label": "Qwen3.5-2B",
+      "stage": 3,
+      "row": 2,
+      "sublabel": "llama-server, GPU",
+      "tag": "continues, then finishes"
+    },
+    {
+      "id": "board",
+      "type": "backend",
+      "label": "Subtitle board",
+      "stage": 4,
+      "row": 2,
+      "sublabel": "English + Chinese",
+      "tag": "per sentence"
+    },
+    {
+      "id": "overlay",
+      "type": "frontend",
+      "label": "Subtitle window",
+      "stage": 4,
+      "row": 0,
+      "sublabel": "always on top"
+    },
+    {
+      "id": "file",
+      "type": "database",
+      "label": "Saved .txt",
+      "stage": 4,
+      "row": 4,
+      "sublabel": "on Save",
+      "tag": "since last clear"
+    }
+  ],
+  "flows": [
+    {
+      "id": "chunks",
+      "from": "audio",
+      "to": "vad",
+      "label": "audio chunks",
+      "variant": "emphasis"
+    },
+    {
+      "id": "segment",
+      "from": "vad",
+      "to": "asr",
+      "label": "speech audio",
+      "variant": "emphasis"
+    },
+    {
+      "id": "hypothesis",
+      "from": "asr",
+      "to": "stab",
+      "label": "English so far",
+      "variant": "emphasis"
+    },
+    {
+      "id": "words",
+      "from": "stab",
+      "to": "sent",
+      "label": "confirmed + grey",
+      "variant": "emphasis"
+    },
+    {
+      "id": "voice",
+      "from": "vad",
+      "to": "spk",
+      "label": "speech audio"
+    },
+    {
+      "id": "draft-in",
+      "from": "sent",
+      "to": "opus",
+      "label": "sentence so far"
+    },
+    {
+      "id": "commit-in",
+      "from": "sent",
+      "to": "qwen",
+      "label": "confirmed English",
+      "variant": "emphasis"
+    },
+    {
+      "id": "draft-out",
+      "from": "opus",
+      "to": "board",
+      "label": "draft"
+    },
+    {
+      "id": "commit-out",
+      "from": "qwen",
+      "to": "board",
+      "label": "translation",
+      "variant": "emphasis"
+    },
+    {
+      "id": "labels",
+      "from": "spk",
+      "to": "board",
+      "label": "speaker labels"
+    },
+    {
+      "id": "push",
+      "from": "board",
+      "to": "overlay",
+      "label": "changed paragraphs",
+      "variant": "emphasis"
+    },
+    {
+      "id": "save",
+      "from": "board",
+      "to": "file",
+      "label": "transcript"
+    }
+  ]
+}

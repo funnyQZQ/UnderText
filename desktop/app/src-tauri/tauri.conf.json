@@ -1,0 +1,76 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "UnderText",
+  "version": "0.1.0",
+  "identifier": "dev.undertext.desktop",
+  "build": {
+    "frontendDist": "../ui"
+  },
+  "app": {
+    "withGlobalTauri": true,
+    "macOSPrivateApi": true,
+    "windows": [
+      {
+        "label": "overlay",
+        "url": "overlay.html",
+        "title": "UnderText",
+        "width": 980,
+        "height": 230,
+        "visible": false,
+        "minWidth": 360,
+        "minHeight": 90,
+        "transparent": true,
+        "decorations": false,
+        "alwaysOnTop": true,
+        "visibleOnAllWorkspaces": true,
+        "skipTaskbar": true,
+        "shadow": false,
+        "resizable": true
+      },
+      {
+        "label": "settings",
+        "url": "settings.html",
+        "title": "UnderText Settings",
+        "width": 580,
+        "height": 720,
+        "minWidth": 460,
+        "minHeight": 480,
+        "visible": false,
+        "titleBarStyle": "Overlay",
+        "hiddenTitle": true,
+        "trafficLightPosition": {
+          "x": 18,
+          "y": 23
+        }
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": [
+      "app",
+      "dmg"
+    ],
+    "category": "Productivity",
+    "shortDescription": "Local real-time English to Chinese subtitles",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "macOS": {
+      "minimumSystemVersion": "13.0",
+      "signingIdentity": "-",
+      "hardenedRuntime": false,
+      "frameworks": [
+        "../../target/release/libsherpa-onnx-c-api.dylib",
+        "../../target/release/libonnxruntime.dylib"
+      ]
+    }
+  }
+}
