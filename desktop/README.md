@@ -96,6 +96,10 @@ Examples:
 
 The report shows each stage per 5-minute bucket and compares the start of the run with the end. Stages that got more than 25% slower are marked with `!`.
 
+### Measuring performance
+
+`scripts/perf_report.py` turns `soak` logs into tables of the time per stage and the subtitle latency, plus line charts over time. [docs/performance.md](../docs/performance.md) has the full procedure and how to read the results.
+
 ### Comparing translation models
 
 Run `soak` twice on the same audio, the second time with `--commit-model other-model.gguf`, then:

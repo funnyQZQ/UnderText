@@ -96,6 +96,25 @@ cd app/src-tauri && cargo tauri build      # output in desktop/target/release/bu
 
 [desktop/README.md](desktop/README.md) covers build problems and `undertext-cli`, which runs the same pipeline in the terminal for testing and long runs.
 
+## Performance
+
+Two 30-minute runs on a MacBook Air M4 (16 GB, no fan) with translation and speaker labels on: one with the default settings, one with power saving.
+
+<p align="center">
+  <img src="docs/images/performance.png" width="900" alt="Time per stage, subtitle latency, backlog and thermal state over 30 minutes, default settings and power saving">
+</p>
+
+| | Default | Power saving |
+|---|---:|---:|
+| Parakeet-TDT, ms per second of audio | 63 | 40 |
+| Opus-MT, ms per call (p50 / p90) | 55 / 121 | 34 / 60 |
+| Qwen3.5-2B, ms per call (p50 / p90) | 730 / 1070 | 313 / 494 |
+| TitaNet, ms per call (p50 / p90) | 25 / 38 | 11 / 17 |
+| Final Chinese after the sentence ends, s (p50 / p90) | 0.92 / 1.89 | 0.37 / 0.76 |
+| Backlog behind the live audio, s (p50 / p90) | 0.94 / 1.89 | 0.43 / 0.73 |
+
+Both runs reached the "fair" thermal state within 3 minutes. The Opus-MT draft appears together with the English (median under 0.1 s) in both. With the default settings Qwen is busy 69% of the time, its calls get about 40% slower over the run, and the backlog grows from 1.5 s to 2 s. Power saving sends shorter prompts less often (Qwen busy 25%), stays almost flat, and halves the latency, so it is the better choice for long sessions on a MacBook Air. [docs/performance.md](docs/performance.md) explains how to run the test.
+
 ## Acknowledgements
 
 UnderText is built on:

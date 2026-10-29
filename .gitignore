@@ -4,3 +4,4 @@ logs/
 samples/
 desktop/target/
 desktop/third_party/
+perf/

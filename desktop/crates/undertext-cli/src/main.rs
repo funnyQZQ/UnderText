@@ -94,6 +94,9 @@ enum Cmd {
         /// no speaker labels (on by default)
         #[arg(long)]
         no_diarize: bool,
+        /// turn power saving on (default: as in the config)
+        #[arg(long)]
+        power_saving: bool,
         /// event log (default: logs/soak-<time>.jsonl next to the models folder)
         #[arg(long)]
         log: Option<PathBuf>,
@@ -213,7 +216,7 @@ fn main() -> Result<()> {
             run(&cfg, &RunOptions { no_draft, no_llm }, log)?;
         }
         Cmd::Report { log } => report(&log)?,
-        Cmd::Soak { config, models, wav, minutes, no_play, commit_model, no_diarize, log } => {
+        Cmd::Soak { config, models, wav, minutes, no_play, commit_model, no_diarize, power_saving, log } => {
             let mut cfg = load(&config)?;
             if let Some(m) = commit_model {
                 cfg.commit.model = m;
@@ -225,6 +228,7 @@ fn main() -> Result<()> {
             cfg.audio.wav_path = wav.to_string_lossy().into();
             cfg.audio.play = !no_play;
             cfg.diarization.enabled = !no_diarize;
+            cfg.performance.power_saving |= power_saving;
             soak(&cfg, minutes, log)?;
         }
         Cmd::SoakReport { log, bucket, csv } => soak_report(&log, bucket, csv)?,

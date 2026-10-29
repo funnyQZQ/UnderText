@@ -2,6 +2,7 @@
 //! battery problems can be traced to a component (`stats` records in the event log).
 
 use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::Mutex;
 use std::time::Instant;
 
 use serde_json::{json, Value};
@@ -18,6 +19,8 @@ pub struct Meter {
     prompt_tokens: AtomicU64,
     cached_tokens: AtomicU64,
     predicted_tokens: AtomicU64,
+    /// Every call since the last `snapshot`: (ms, units), for percentiles in the analysis.
+    samples: Mutex<Vec<(f32, u64)>>,
 }
 
 impl Meter {
@@ -30,6 +33,7 @@ impl Meter {
             prompt_tokens: AtomicU64::new(0),
             cached_tokens: AtomicU64::new(0),
             predicted_tokens: AtomicU64::new(0),
+            samples: Mutex::new(Vec::new()),
         }
     }
 
@@ -47,6 +51,9 @@ impl Meter {
         self.calls.fetch_add(1, Ordering::Relaxed);
         self.units.fetch_add(units, Ordering::Relaxed);
         self.max_us.fetch_max(us, Ordering::Relaxed);
+        if let Ok(mut s) = self.samples.lock() {
+            s.push((us as f32 / 1000.0, units));
+        }
         r
     }
 
@@ -57,7 +64,9 @@ impl Meter {
     }
 
     fn json(&self) -> Value {
-        json!({
+        let samples = self.samples.lock().map(|mut s| std::mem::take(&mut *s)).unwrap_or_default();
+        let ms: Vec<f64> = samples.iter().map(|s| (s.0 as f64 * 10.0).round() / 10.0).collect();
+        let mut v = json!({
             "busy_s": self.busy_us.load(Ordering::Relaxed) as f64 / 1e6,
             "calls": self.calls.load(Ordering::Relaxed),
             "units": self.units.load(Ordering::Relaxed),
@@ -65,12 +74,21 @@ impl Meter {
             "prompt_tokens": self.prompt_tokens.load(Ordering::Relaxed),
             "cached_tokens": self.cached_tokens.load(Ordering::Relaxed),
             "predicted_tokens": self.predicted_tokens.load(Ordering::Relaxed),
-        })
+            "samples_ms": ms,
+        });
+        // ASR: audio length of each call, to tell slow decoding from long segments
+        if samples.iter().any(|s| s.1 > 0) {
+            v["samples_units"] = json!(samples.iter().map(|s| s.1).collect::<Vec<_>>());
+        }
+        v
     }
 
     fn reset(&self) {
         for a in [&self.busy_us, &self.calls, &self.units, &self.max_us, &self.prompt_tokens, &self.cached_tokens, &self.predicted_tokens] {
             a.store(0, Ordering::Relaxed);
+        }
+        if let Ok(mut s) = self.samples.lock() {
+            s.clear();
         }
     }
 }
@@ -80,7 +98,8 @@ pub static DRAFT: Meter = Meter::new();
 pub static LLM: Meter = Meter::new();
 pub static SPEAKER: Meter = Meter::new();
 
-/// Totals since the last `reset` (`max_ms`: longest call since the previous snapshot).
+/// Totals since the last `reset` (`max_ms` and `samples_ms`: calls since the previous
+/// snapshot).
 pub fn snapshot() -> Value {
     json!({"asr": ASR.json(), "draft": DRAFT.json(), "llm": LLM.json(), "speaker": SPEAKER.json()})
 }
