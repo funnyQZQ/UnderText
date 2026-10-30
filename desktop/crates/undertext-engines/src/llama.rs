@@ -151,7 +151,7 @@ impl LlamaServerProcess {
         if !spec.model.exists() {
             bail!("model not found: {}", spec.model.display());
         }
-        let log = File::create(&log_path)?;
+        let log = File::create(&log_path).with_context(|| format!("creating {}", log_path.display()))?;
         let child = Command::new(spec.binary)
             .arg("-m")
             .arg(spec.model)

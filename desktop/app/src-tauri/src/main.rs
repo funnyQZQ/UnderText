@@ -373,8 +373,14 @@ fn run_pipeline(app: &AppHandle, cfg: &AppConfig, stop: Arc<AtomicBool>) -> anyh
     let log = if cfg.ui.log_path.is_empty() {
         None
     } else {
+        use anyhow::Context;
         let path = undertext_core::config::expand_home(&cfg.ui.log_path);
-        Some(Arc::new(EventLog::new(Box::new(std::fs::File::create(path)?))))
+        if let Some(dir) = path.parent().filter(|d| !d.as_os_str().is_empty()) {
+            let _ = std::fs::create_dir_all(dir);
+        }
+        let file = std::fs::File::create(&path)
+            .with_context(|| format!("Could not create the latency log {} (Settings → Advanced)", path.display()))?;
+        Some(Arc::new(EventLog::new(Box::new(file))))
     };
     let app_s = app.clone();
     let mut pipe = pipeline::build(cfg, &RunOptions::default(), None, log, &move |msg| {

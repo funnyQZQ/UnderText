@@ -5,7 +5,10 @@
 <p align="center">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="License: MIT"></a>
   <img src="https://img.shields.io/badge/macOS-Apple%20Silicon-000000?logo=apple&logoColor=white" alt="macOS on Apple Silicon">
+  <a href="https://undertext.leo-draw.xyz/en/"><img src="https://img.shields.io/badge/website-undertext.leo--draw.xyz-f4b440" alt="Website: undertext.leo-draw.xyz"></a>
 </p>
+
+<p align="center"><a href="https://undertext.leo-draw.xyz/en/"><b>Website</b></a> | <a href="https://undertext.leo-draw.xyz/">中文网站</a> | <a href="../../releases/latest">Download</a></p>
 
 UnderText shows live English subtitles with a Chinese translation underneath, in a small window that stays on top of whatever you are watching. Speech recognition, translation and speaker detection all run on the Mac. Nothing is sent over the network.
 
