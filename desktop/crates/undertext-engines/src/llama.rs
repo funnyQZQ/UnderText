@@ -1,8 +1,9 @@
 //! llama.cpp integration: `llama-server` processes managed by the app + an HTTP client.
 //!
-//! Running the official llama-server (Homebrew on macOS, release zip on Windows) instead of
-//! linking llama.cpp keeps new model architectures (Qwen3.5) available as soon as
-//! llama.cpp supports them, and isolates model crashes from the app.
+//! Running the official llama-server (bundled in the macOS app, Homebrew for source builds,
+//! release zip on Windows) instead of linking llama.cpp keeps new model architectures
+//! (Qwen3.5) available as soon as llama.cpp supports them, and isolates model crashes from
+//! the app.
 
 use std::fs::File;
 use std::io::{BufRead, BufReader};
@@ -14,21 +15,21 @@ use anyhow::{anyhow, bail, Context, Result};
 use undertext_core::translate::CompletionBackend;
 use serde_json::{json, Value};
 
-/// Locations searched when no binary is configured. GUI apps on macOS get a minimal
-/// PATH, so the Homebrew prefixes are listed explicitly.
+/// Locations searched when no binary is configured: next to the app binary first (the
+/// packaged app ships the llama.cpp release build in Contents/MacOS, a version known to
+/// work), then PATH and the Homebrew prefixes (GUI apps on macOS get a minimal PATH).
 pub fn find_llama_server(configured: &str) -> Result<PathBuf> {
     if !configured.is_empty() {
         let p = PathBuf::from(configured);
         return if p.exists() { Ok(p) } else { Err(anyhow!("llama-server not found at {configured}")) };
     }
     let exe = if cfg!(windows) { "llama-server.exe" } else { "llama-server" };
-    let mut dirs: Vec<PathBuf> = std::env::var_os("PATH").map(|p| std::env::split_paths(&p).collect()).unwrap_or_default();
-    dirs.extend(["/opt/homebrew/bin", "/usr/local/bin"].iter().map(PathBuf::from));
-    if let Ok(cur) = std::env::current_exe() {
-        if let Some(d) = cur.parent() {
-            dirs.push(d.to_path_buf()); // bundled next to the app binary
-        }
+    let mut dirs: Vec<PathBuf> = Vec::new();
+    if let Some(d) = std::env::current_exe().ok().and_then(|cur| cur.parent().map(Path::to_path_buf)) {
+        dirs.push(d); // bundled next to the app binary
     }
+    dirs.extend(std::env::var_os("PATH").map(|p| std::env::split_paths(&p).collect::<Vec<_>>()).unwrap_or_default());
+    dirs.extend(["/opt/homebrew/bin", "/usr/local/bin"].iter().map(PathBuf::from));
     dirs.into_iter().map(|d| d.join(exe)).find(|p| p.is_file()).ok_or_else(|| {
         anyhow!("llama-server not found. Install it (macOS: `brew install llama.cpp`) or set llama_server.binary")
     })

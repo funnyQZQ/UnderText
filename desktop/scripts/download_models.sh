@@ -1,47 +1,56 @@
 #!/usr/bin/env bash
-# Download the models UnderText uses into ../models (next to desktop/).
+# Download the models UnderText uses into ../models (next to desktop/), from the project's
+# own model repository (the same files the app downloads on first launch).
 #
-#   scripts/download_models.sh            # everything that is missing
-#   HF_ENDPOINT=https://hf-mirror.com scripts/download_models.sh   # Hugging Face mirror
+#   scripts/download_models.sh                          # from Hugging Face
+#   MODELS_FROM=modelscope scripts/download_models.sh   # from ModelScope (fast in mainland China)
 #   MODELS=/path/to/models scripts/download_models.sh
 #
-# Files that already exist are skipped, so it is safe to run again after an interruption.
+# Files that already exist with the right size are skipped and interrupted downloads
+# resume, so it is safe to run again.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
 MODELS=${MODELS:-../models}
-HF=${HF_ENDPOINT:-https://huggingface.co}
-SHERPA=https://github.com/k2-fsa/sherpa-onnx/releases/download
-mkdir -p "$MODELS"
+case "${MODELS_FROM:-huggingface}" in
+  huggingface) BASE=https://huggingface.co/funnyQZQ/undertext-models/resolve/main ;;
+  modelscope)  BASE=https://modelscope.cn/models/funnyqzq/undertext-models/resolve/master ;;
+  *) echo "MODELS_FROM must be huggingface or modelscope" >&2; exit 1 ;;
+esac
 
-fetch() {  # url dest
-  if [ -e "$2" ]; then echo "  exists: $2"; return; fi
-  echo "  downloading $1"
-  curl -fL --retry 3 --progress-bar -o "$2.part" "$1"
-  mv "$2.part" "$2"
-}
+# path in the models folder and size in bytes (same list as app/src-tauri/src/download.rs)
+FILES="
+Qwen3.5-2B-Q4_K_M.gguf 1280835840
+sherpa-onnx-nemo-parakeet-tdt-0.6b-v2-int8/encoder.int8.onnx 652184296
+sherpa-onnx-nemo-parakeet-tdt-0.6b-v2-int8/decoder.int8.onnx 7257753
+sherpa-onnx-nemo-parakeet-tdt-0.6b-v2-int8/joiner.int8.onnx 1739080
+sherpa-onnx-nemo-parakeet-tdt-0.6b-v2-int8/tokens.txt 9384
+silero_vad.onnx 643854
+nemo_en_titanet_small.onnx 40257283
+opus-mt-en-zh-ct2/config.json 215
+opus-mt-en-zh-ct2/model.bin 155502615
+opus-mt-en-zh-ct2/shared_vocabulary.json 1303887
+opus-mt-en-zh-ct2/source.spm 806435
+opus-mt-en-zh-ct2/target.spm 804600
+"
 
-fetch_tar() {  # url (a .tar.bz2 that unpacks into a folder of the same name)
-  local name; name=$(basename "$1" .tar.bz2)
-  if [ -d "$MODELS/$name" ]; then echo "  exists: $MODELS/$name"; return; fi
-  fetch "$1" "$MODELS/$name.tar.bz2"
-  tar -xjf "$MODELS/$name.tar.bz2" -C "$MODELS"
-  rm "$MODELS/$name.tar.bz2"
-}
+size() { stat -c %s "$1" 2>/dev/null || stat -f %z "$1"; }  # GNU, then BSD/macOS
 
-echo "[speech] Parakeet-TDT 0.6B v2 (int8) + Silero VAD"
-fetch_tar "$SHERPA/asr-models/sherpa-onnx-nemo-parakeet-tdt-0.6b-v2-int8.tar.bz2"
-fetch "$SHERPA/asr-models/silero_vad.onnx" "$MODELS/silero_vad.onnx"
-
-echo "[speakers] NeMo TitaNet-small"
-fetch "$SHERPA/speaker-recongition-models/nemo_en_titanet_small.onnx" "$MODELS/nemo_en_titanet_small.onnx"
-
-echo "[translation] Qwen3.5-2B (Q4_K_M, 1.3 GB)"
-fetch "$HF/unsloth/Qwen3.5-2B-GGUF/resolve/main/Qwen3.5-2B-Q4_K_M.gguf" "$MODELS/Qwen3.5-2B-Q4_K_M.gguf"
-
-echo "[draft] Opus-MT en-zh (CTranslate2)"
-mkdir -p "$MODELS/opus-mt-en-zh-ct2"
-for f in model.bin shared_vocabulary.json source.spm target.spm; do
-  fetch "$HF/gaudi/opus-mt-en-zh-ctranslate2/resolve/main/$f" "$MODELS/opus-mt-en-zh-ct2/$f"
+echo "$FILES" | while read -r rel bytes; do
+  [ -n "$rel" ] || continue
+  dest="$MODELS/$rel"
+  if [ -f "$dest" ] && [ "$(size "$dest")" = "$bytes" ]; then
+    echo "  ok: $rel"
+    continue
+  fi
+  mkdir -p "$(dirname "$dest")"
+  echo "  downloading $rel"
+  curl -fL --retry 3 --progress-bar -C - -o "$dest.part" "$BASE/$rel"
+  if [ "$(size "$dest.part")" != "$bytes" ]; then
+    echo "  $rel: got $(size "$dest.part") bytes, expected $bytes. Run again to download it afresh." >&2
+    rm -f "$dest.part"
+    exit 1
+  fi
+  mv "$dest.part" "$dest"
 done
 echo "done: $MODELS"

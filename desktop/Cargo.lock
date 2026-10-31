@@ -4546,7 +4546,7 @@ checksum = "b6f5e870be6c3b371b77fe0ee0bafb859fa4964b4404c27de1d380043c4dda20"
 
 [[package]]
 name = "undertext-app"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "anyhow",
  "chrono",
@@ -4563,7 +4563,7 @@ dependencies = [
 
 [[package]]
 name = "undertext-cli"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "anyhow",
  "clap",
@@ -4577,7 +4577,7 @@ dependencies = [
 
 [[package]]
 name = "undertext-core"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "anyhow",
  "log",
@@ -4588,7 +4588,7 @@ dependencies = [
 
 [[package]]
 name = "undertext-engines"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "anyhow",
  "cpal",

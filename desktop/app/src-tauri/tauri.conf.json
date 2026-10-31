@@ -1,10 +1,10 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "UnderText",
-  "version": "0.1.0",
   "identifier": "dev.undertext.desktop",
   "build": {
-    "frontendDist": "../ui"
+    "frontendDist": "../ui",
+    "beforeBundleCommand": "bash -c 'cd \"$(git rev-parse --show-toplevel)/desktop\" && scripts/fetch_llama_server.sh'"
   },
   "app": {
     "withGlobalTauri": true,
@@ -30,7 +30,7 @@
       {
         "label": "settings",
         "url": "settings.html",
-        "title": "UnderText Settings",
+        "title": "UnderText 设置",
         "width": 580,
         "height": 720,
         "minWidth": 460,
@@ -55,7 +55,7 @@
       "dmg"
     ],
     "category": "Productivity",
-    "shortDescription": "Local real-time English to Chinese subtitles",
+    "shortDescription": "本地实时英译中字幕",
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
@@ -70,7 +70,21 @@
       "frameworks": [
         "../../target/release/libsherpa-onnx-c-api.dylib",
         "../../target/release/libonnxruntime.dylib"
-      ]
+      ],
+      "files": {
+        "MacOS/llama-server": "../../third_party/llama.cpp/llama-server",
+        "MacOS/libllama-server-impl.dylib": "../../third_party/llama.cpp/libllama-server-impl.dylib",
+        "MacOS/libllama-common.0.dylib": "../../third_party/llama.cpp/libllama-common.0.dylib",
+        "MacOS/libmtmd.0.dylib": "../../third_party/llama.cpp/libmtmd.0.dylib",
+        "MacOS/libllama.0.dylib": "../../third_party/llama.cpp/libllama.0.dylib",
+        "MacOS/libggml.0.dylib": "../../third_party/llama.cpp/libggml.0.dylib",
+        "MacOS/libggml-base.0.dylib": "../../third_party/llama.cpp/libggml-base.0.dylib",
+        "MacOS/libggml-cpu.0.dylib": "../../third_party/llama.cpp/libggml-cpu.0.dylib",
+        "MacOS/libggml-blas.0.dylib": "../../third_party/llama.cpp/libggml-blas.0.dylib",
+        "MacOS/libggml-metal.0.dylib": "../../third_party/llama.cpp/libggml-metal.0.dylib",
+        "MacOS/libggml-rpc.0.dylib": "../../third_party/llama.cpp/libggml-rpc.0.dylib",
+        "Resources/llama.cpp-LICENSE": "../../third_party/llama.cpp/LICENSE"
+      }
     }
   }
 }

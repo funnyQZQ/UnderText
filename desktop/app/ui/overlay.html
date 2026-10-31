@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -162,22 +162,22 @@
 </head>
 <body>
   <div class="band" data-tauri-drag-region>
-    <div class="status" id="status">Click <strong>▶</strong> to start subtitles. Drag here to move the window.</div>
+    <div class="status" id="status">点 <strong>▶</strong> 开始字幕。拖动这里可以移动窗口。</div>
     <div class="lines" id="lines"><div id="content"></div></div>
-    <button class="latest" id="latest" hidden>↓ Latest</button>
+    <button class="latest" id="latest" hidden>↓ 最新</button>
   </div>
   <div class="toast" id="toast" role="status" hidden></div>
   <div class="controls">
-    <button id="toggle" title="Start subtitles" aria-label="Start subtitles">
+    <button id="toggle" title="开始字幕" aria-label="开始字幕">
       <svg viewBox="0 0 16 16" id="icon-play"><path d="M4 2.5v11l9-5.5z"/></svg>
     </button>
-    <button id="clear" title="Clear the subtitle window" aria-label="Clear subtitles">
+    <button id="clear" title="清空字幕窗口" aria-label="清空字幕">
       <svg viewBox="0 0 16 16" class="line"><path d="M3 4.5h10M6.5 4.5V3h3v1.5M4.5 4.5l.6 8.5h5.8l.6-8.5"/></svg>
     </button>
-    <button id="save" title="Save subtitles to a file" aria-label="Save subtitles">
+    <button id="save" title="把字幕保存成文件" aria-label="保存字幕">
       <svg viewBox="0 0 16 16" class="line"><path d="M8 2.5v7.5M5 7l3 3 3-3M3 12.5h10"/></svg>
     </button>
-    <button id="settings" title="Settings" aria-label="Settings">
+    <button id="settings" title="设置" aria-label="设置">
       <svg viewBox="0 0 16 16"><path d="M9.4 1l.4 2 .9.4 1.7-1.1 1.4 1.4-1.1 1.7.4.9 2 .4v2l-2 .4-.4.9 1.1 1.7-1.4 1.4-1.7-1.1-.9.4-.4 2h-2l-.4-2-.9-.4-1.7 1.1-1.4-1.4 1.1-1.7-.4-.9-2-.4v-2l2-.4.4-.9-1.1-1.7 1.4-1.4 1.7 1.1.9-.4.4-2zM8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5z"/></svg>
     </button>
   </div>
@@ -287,7 +287,7 @@
   function renderStatus(s) {
     running = s.running;
     $('icon-play').innerHTML = running ? STOP : PLAY;
-    $('toggle').title = running ? 'Stop subtitles' : 'Start subtitles';
+    $('toggle').title = running ? '停止字幕' : '开始字幕';
     $('toggle').setAttribute('aria-label', $('toggle').title);
     $('toggle').classList.toggle('on', running);
     const st = $('status');
@@ -299,12 +299,12 @@
     }
     if (!hasLines) {
       st.innerHTML = '';
-      st.append(document.createTextNode(s.running ? s.message : 'Click '));
+      st.append(document.createTextNode(s.running ? s.message : '点 '));
       if (!s.running) {
         st.append(el('strong', '', '▶'));
-        st.append(document.createTextNode(' to start subtitles. Drag here to move the window.'));
+        st.append(document.createTextNode(' 开始字幕。拖动这里可以移动窗口。'));
       }
-      if (s.warnings && s.warnings.length) st.append(el('div', '', s.warnings.join('; ')));
+      if (s.warnings && s.warnings.length) st.append(el('div', '', s.warnings.join('；')));
     }
   }
 
@@ -340,7 +340,7 @@
   };
   $('save').onclick = () =>
     invoke('save_transcript', { after: clearedUpTo })
-      .then((path) => path && toast('Saved to ' + path))
+      .then((path) => path && toast('已保存到 ' + path))
       .catch((e) => toast(String(e)));
 
   listen('subtitles', (e) => applyUpdate(e.payload));

@@ -25,9 +25,9 @@ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh   # Rust, if need
 brew install llama.cpp cmake
 ```
 
-`llama.cpp` provides `llama-server`, which the app starts by itself. CMake is needed once, to build CTranslate2 from source on the first build (a few minutes).
+`llama.cpp` provides `llama-server`, which the app starts by itself (the packaged app brings its own, see below). CMake is needed once, to build CTranslate2 from source on the first build (a few minutes).
 
-Download the models into `../models`. Files that already exist are skipped. Set `HF_ENDPOINT` to use a Hugging Face mirror.
+Download the models into `../models` from the project's model repository on Hugging Face (or ModelScope with `MODELS_FROM=modelscope`, faster in mainland China). Files that already exist are skipped, and interrupted downloads resume.
 
 ```bash
 scripts/download_models.sh
@@ -48,9 +48,11 @@ cargo install tauri-cli --version "^2"
 cd app/src-tauri && cargo tauri build
 ```
 
+Before bundling, `scripts/fetch_llama_server.sh` runs by itself: it downloads the llama.cpp release build (pinned version, checked against its SHA-256), keeps `llama-server` and the 10 libraries it loads in `third_party/llama.cpp/`, and the bundler copies them into `UnderText.app/Contents/MacOS/` (about 30 MB). They find each other through `@loader_path`, so they must stay in one folder. The app looks for `llama-server` next to its own binary first, then in PATH and the Homebrew folders. To update llama.cpp, change `BUILD` and `SHA256` in the script.
+
 Unsigned builds have to be allowed once in System Settings > Privacy & Security.
 
-To test the `.dmg` the way a new user gets it (no settings, no models, no llama-server), run `scripts/fresh_install.sh reset` before installing and `scripts/fresh_install.sh restore` afterwards. It moves the app's settings folder aside and unlinks Homebrew's llama.cpp; nothing is deleted.
+To test the `.dmg` the way a new user gets it (no settings, no models, no Homebrew llama.cpp), run `scripts/fresh_install.sh reset` before installing and `scripts/fresh_install.sh restore` afterwards. It moves the app's settings folder aside and unlinks Homebrew's llama.cpp; nothing is deleted.
 
 ### Build problems
 
@@ -114,5 +116,6 @@ The page lines up the sentences of both runs, highlights where the translations 
 
 - The llama-server prompt cache is off by default (`[llama_server] prompt_cache = false`). Qwen3.5 cannot reuse it, and over a long session it grows to several GB. It is worth turning on for full-attention models such as Qwen2.5 or Qwen3.
 - System audio needs a virtual device such as BlackHole for now. Native capture with Core Audio process taps (macOS 14.2+) would remove that step.
-- `llama-server` is not inside the `.app`. If none is installed, the app downloads the llama.cpp release build on first launch.
+- The `.app` includes `llama-server`. Builds run with `cargo run` use Homebrew's (`brew install llama.cpp`).
+- The models come from the project's own repositories, [funnyQZQ/undertext-models](https://huggingface.co/funnyQZQ/undertext-models) on Hugging Face and [funnyqzq/undertext-models](https://modelscope.cn/models/funnyqzq/undertext-models) on ModelScope, laid out like the models folder. `scripts/upload_models.py` uploads them; `scripts/modelscope/README.md` is the model card of both. To add or change a model, upload it to both and add its size to `size_of` in `app/src-tauri/src/download.rs`.
 - The core and engine crates already build on Windows. A Windows release still needs WASAPI loopback capture and packaging.

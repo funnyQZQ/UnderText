@@ -4,12 +4,15 @@
 //! * settings window: models folder, audio source, LLMs, diarization, appearance
 //! * tray menu      : start / stop, click-through, show / hide, settings, quit
 //!
+//! The interface is in Chinese; engine messages are translated in `zh.rs`.
+//!
 //! The pipeline runs on its own thread (built by `undertext_engines::pipeline`); a second
 //! thread pushes subtitle snapshots to the overlay at up to 10 Hz.
 
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 mod download;
+mod zh;
 
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -53,8 +56,6 @@ struct AppState {
     /// Subtitles of the current (or last) run and when it started, for saving to a file.
     board: Mutex<Option<(Arc<SubtitleBoard>, chrono::DateTime<chrono::Local>)>>,
     downloader: download::Downloader,
-    /// Where a downloaded llama-server goes (when none is installed).
-    llama_dir: PathBuf,
 }
 
 #[derive(Debug, Clone, Serialize, Default)]
@@ -115,7 +116,7 @@ fn set_status(app: &AppHandle, f: impl FnOnce(&mut Status)) {
     // waiting for this same lock in a tray handler
     let item = state.tray.lock().unwrap().as_ref().map(|t| t.start.clone());
     if let Some(item) = item {
-        let _ = item.set_text(if status.running { "Stop Subtitles" } else { "Start Subtitles" });
+        let _ = item.set_text(if status.running { "停止字幕" } else { "开始字幕" });
     }
     let _ = app.emit("status", status);
 }
@@ -149,7 +150,7 @@ fn check_setup(state: State<AppState>, config: Option<AppConfig>) -> SetupCheck 
             .into_iter()
             .map(|(what, path, ok)| ModelCheck { what, path: path.display().to_string(), ok })
             .collect(),
-        llama_server: find_llama_server(&cfg.llama_server.binary).map(|p| p.display().to_string()).map_err(|e| e.to_string()),
+        llama_server: find_llama_server(&cfg.llama_server.binary).map(|p| p.display().to_string()).map_err(|e| zh::error(&e.to_string())),
         config_path: state.config_path.display().to_string(),
     }
 }
@@ -158,22 +159,14 @@ fn check_setup(state: State<AppState>, config: Option<AppConfig>) -> SetupCheck 
 #[tauri::command]
 fn download_plan(state: State<AppState>, config: Option<AppConfig>) -> download::Plan {
     let cfg = config.unwrap_or_else(|| state.config.lock().unwrap().clone());
-    download::plan(&cfg, &state.llama_dir)
+    download::plan(&cfg)
 }
 
 /// Download the missing models in the background; progress arrives as `download` events.
 #[tauri::command]
 fn download_start(app: AppHandle, state: State<AppState>, config: Option<AppConfig>) {
     let cfg = config.unwrap_or_else(|| state.config.lock().unwrap().clone());
-    let app2 = app.clone();
-    state.downloader.start(app, cfg, state.llama_dir.clone(), move |server| {
-        let state = app2.state::<AppState>();
-        let mut cfg = state.config.lock().unwrap().clone();
-        cfg.llama_server.binary = server.display().to_string();
-        if let Err(e) = save_config(app2.clone(), state, cfg) {
-            log::error!("saving llama-server path: {e}");
-        }
-    });
+    state.downloader.start(app, cfg);
 }
 
 #[tauri::command]
@@ -181,10 +174,28 @@ fn download_cancel(state: State<AppState>) {
     state.downloader.cancel();
 }
 
+/// Open one of the model download pages, or the models folder in Finder, for
+/// downloading the models by hand. Only these three targets can be opened.
+#[tauri::command]
+fn open_for_manual_download(state: State<AppState>, which: String, config: Option<AppConfig>) -> Result<(), String> {
+    let target = match which.as_str() {
+        "huggingface" => download::HUGGING_FACE.page.to_string(),
+        "modelscope" => download::MODELSCOPE.page.to_string(),
+        "models" => {
+            let cfg = config.unwrap_or_else(|| state.config.lock().unwrap().clone());
+            let dir = undertext_core::config::expand_home(&cfg.models_dir);
+            std::fs::create_dir_all(&dir).map_err(|e| format!("无法创建模型文件夹 {}：{e}", dir.display()))?;
+            dir.display().to_string()
+        }
+        other => return Err(format!("unknown target {other:?}")),
+    };
+    std::process::Command::new("open").arg(&target).spawn().map(|_| ()).map_err(|e| format!("无法打开 {target}：{e}"))
+}
+
 #[tauri::command]
 fn list_devices() -> Result<Devices, String> {
     let names = |r: anyhow::Result<Vec<undertext_engines::audio::DeviceInfo>>| -> Result<Vec<String>, String> {
-        Ok(r.map_err(|e| e.to_string())?.into_iter().map(|d| d.name).collect())
+        Ok(r.map_err(|e| format!("无法读取音频设备：{}", zh::error(&format!("{e:#}"))))?.into_iter().map(|d| d.name).collect())
     };
     Ok(Devices { inputs: names(list_input_devices())?, outputs: names(list_output_devices())? })
 }
@@ -193,8 +204,8 @@ fn list_devices() -> Result<Devices, String> {
 async fn pick_wav(app: AppHandle) -> Option<String> {
     app.dialog()
         .file()
-        .set_title("Choose a WAV file")
-        .add_filter("WAV audio", &["wav"])
+        .set_title("选择 WAV 文件")
+        .add_filter("WAV 音频", &["wav"])
         .blocking_pick_file()
         .and_then(|p| p.into_path().ok())
         .map(|p| p.display().to_string())
@@ -202,7 +213,7 @@ async fn pick_wav(app: AppHandle) -> Option<String> {
 
 #[tauri::command]
 async fn pick_folder(app: AppHandle) -> Option<String> {
-    app.dialog().file().set_title("Choose the models folder").blocking_pick_folder().and_then(|p| p.into_path().ok()).map(|p| p.display().to_string())
+    app.dialog().file().set_title("选择模型文件夹").blocking_pick_folder().and_then(|p| p.into_path().ok()).map(|p| p.display().to_string())
 }
 
 /// Start the subtitles. Returns false when models are missing: the settings window then
@@ -229,7 +240,7 @@ fn set_click_through(app: AppHandle, on: bool) -> Result<(), String> {
 async fn save_transcript(app: AppHandle, after: Option<i64>) -> Result<Option<String>, String> {
     let state = app.state::<AppState>();
     let Some((board, started)) = state.board.lock().unwrap().clone() else {
-        return Err("Nothing to save yet".into());
+        return Err("还没有可以保存的字幕".into());
     };
     let para_cfg = state.config.lock().unwrap().ui.paragraphs.clone();
     let after = after.unwrap_or(-1);
@@ -245,14 +256,14 @@ async fn save_transcript(app: AppHandle, after: Option<i64>) -> Result<Option<St
         })
         .collect();
     if paragraphs.iter().all(|(_, p)| p.sentences.is_empty()) {
-        return Err("Nothing to save yet".into());
+        return Err("还没有可以保存的字幕".into());
     }
     let Some(path) = app
         .dialog()
         .file()
-        .set_title("Save subtitles")
+        .set_title("保存字幕")
         .set_file_name(format!("undertext-{}.txt", chrono::Local::now().format("%Y-%m-%d-%H%M")))
-        .add_filter("Text", &["txt"])
+        .add_filter("文本", &["txt"])
         .blocking_save_file()
         .and_then(|p| p.into_path().ok())
     else {
@@ -261,8 +272,8 @@ async fn save_transcript(app: AppHandle, after: Option<i64>) -> Result<Option<St
     let stamp = |t: f64| (started + chrono::Duration::milliseconds((t.max(0.0) * 1000.0) as i64)).format("%Y-%m-%d %H:%M:%S %:z").to_string();
     let first = paragraphs.iter().find_map(|(t, _)| *t);
     let mut out = format!(
-        "UnderText subtitles{}\n",
-        first.map(|t| format!(", from {}", stamp(t))).unwrap_or_default()
+        "UnderText 字幕{}\n",
+        first.map(|t| format!("，开始于 {}", stamp(t))).unwrap_or_default()
     );
     for (start, p) in paragraphs {
         let join = |f: &dyn Fn(&undertext_core::board::SentenceDisplay) -> String| {
@@ -289,7 +300,7 @@ async fn save_transcript(app: AppHandle, after: Option<i64>) -> Result<Option<St
             out.push('\n');
         }
     }
-    std::fs::write(&path, out).map_err(|e| format!("Could not save: {e}"))?;
+    std::fs::write(&path, out).map_err(|e| format!("无法保存：{e}"))?;
     Ok(Some(path.display().to_string()))
 }
 
@@ -301,13 +312,14 @@ fn open_settings(app: AppHandle) {
 // --- pipeline lifecycle ------------------------------------------------------------------
 
 /// Whether the current settings can run: every model file there and, when translating,
-/// llama-server found. The ones the app can download count as missing too.
-fn needs_download(state: &AppState, cfg: &AppConfig) -> bool {
+/// llama-server found (it comes with the app). The download dialog is only offered for
+/// missing model files.
+fn needs_download(cfg: &AppConfig) -> bool {
     let missing = cfg.required_models().iter().any(|m| !m.2)
         || (cfg.translate && cfg.commit.enabled() && find_llama_server(&cfg.llama_server.binary).is_err());
     // only offer the dialog when there is something it can fetch (custom model names
     // can't be downloaded; those fall through to the usual error)
-    missing && !download::plan(cfg, &state.llama_dir).items.is_empty()
+    missing && !download::plan(cfg).items.is_empty()
 }
 
 /// Bring up the settings window with the model download dialog.
@@ -317,7 +329,7 @@ fn offer_download(app: &AppHandle) {
     set_status(app, |s| {
         s.running = false;
         s.error = None;
-        s.message = "Download the models to start".into();
+        s.message = "请先下载模型".into();
     });
 }
 
@@ -325,7 +337,7 @@ fn offer_download(app: &AppHandle) {
 fn start_pipeline(app: &AppHandle) -> Result<bool, String> {
     let state = app.state::<AppState>();
     let cfg = state.config.lock().unwrap().clone();
-    if needs_download(&state, &cfg) {
+    if needs_download(&cfg) {
         offer_download(app);
         return Ok(false);
     }
@@ -342,25 +354,25 @@ fn start_pipeline(app: &AppHandle) -> Result<bool, String> {
         .spawn(move || {
             let previous: Vec<_> = app2.state::<AppState>().stopping.lock().unwrap().drain(..).collect();
             if !previous.is_empty() {
-                set_status(&app2, |s| s.message = "Waiting for the previous run to finish…".into());
+                set_status(&app2, |s| s.message = "正在等待上一次运行结束…".into());
                 for prev in previous {
                     let _ = prev.join();
                 }
             }
             set_status(&app2, |s| {
-                *s = Status { running: true, message: "Loading models…".into(), ..Default::default() };
+                *s = Status { running: true, message: "正在加载模型…".into(), ..Default::default() };
             });
             if let Err(e) = run_pipeline(&app2, &cfg, stop2) {
                 log::error!("{e:#}");
                 set_status(&app2, |s| {
                     s.running = false;
-                    s.message = "Something went wrong".into();
-                    s.error = Some(format!("{e:#}"));
+                    s.message = "出错了".into();
+                    s.error = Some(zh::error(&format!("{e:#}")));
                 });
             } else {
                 set_status(&app2, |s| {
                     s.running = false;
-                    s.message = "Stopped".into();
+                    s.message = "已停止".into();
                 });
             }
         })
@@ -379,22 +391,22 @@ fn run_pipeline(app: &AppHandle, cfg: &AppConfig, stop: Arc<AtomicBool>) -> anyh
             let _ = std::fs::create_dir_all(dir);
         }
         let file = std::fs::File::create(&path)
-            .with_context(|| format!("Could not create the latency log {} (Settings → Advanced)", path.display()))?;
+            .with_context(|| format!("无法创建延迟日志 {}（设置 → 高级）", path.display()))?;
         Some(Arc::new(EventLog::new(Box::new(file))))
     };
     let app_s = app.clone();
     let mut pipe = pipeline::build(cfg, &RunOptions::default(), None, log, &move |msg| {
-        let msg = msg.to_string();
+        let msg = zh::status(msg);
         set_status(&app_s, |s| s.message = msg);
     })?;
-    let warnings = pipe.warnings.clone();
+    let warnings: Vec<String> = pipe.warnings.iter().map(|w| zh::warning(w)).collect();
     let source_name = match cfg.audio.source {
-        undertext_core::config::SourceKind::Mic if cfg.audio.device.is_empty() => "the default input device".to_string(),
+        undertext_core::config::SourceKind::Mic if cfg.audio.device.is_empty() => "默认输入设备".to_string(),
         undertext_core::config::SourceKind::Mic => cfg.audio.device.clone(),
         undertext_core::config::SourceKind::Wav => cfg.audio.wav_path.rsplit(['/', '\\']).next().unwrap_or("").to_string(),
     };
     set_status(app, |s| {
-        s.message = format!("Listening to {source_name}");
+        s.message = format!("正在收听：{source_name}");
         s.warnings = warnings;
     });
 
@@ -456,7 +468,7 @@ fn stop_pipeline(app: &AppHandle) {
     let state = app.state::<AppState>();
     let runner = state.runner.lock().unwrap().take();
     if let Some(r) = runner {
-        set_status(app, |s| s.message = "Stopping…".into());
+        set_status(app, |s| s.message = "正在停止…".into());
         r.stop.store(true, Ordering::SeqCst);
         // the pipeline finishes pending translations first; a later start joins it
         state.stopping.lock().unwrap().push(r.thread);
@@ -546,11 +558,11 @@ fn apply_click_through(app: &AppHandle, on: bool) -> Result<(), String> {
 }
 
 fn build_tray(app: &AppHandle) -> tauri::Result<()> {
-    let start = MenuItem::with_id(app, "toggle", "Start Subtitles", true, None::<&str>)?;
-    let click = CheckMenuItem::with_id(app, "click_through", "Lock Subtitle Window (Click Through)", true, false, None::<&str>)?;
-    let show = MenuItem::with_id(app, "show", "Show / Hide Subtitles", true, None::<&str>)?;
-    let settings = MenuItem::with_id(app, "settings", "Settings…", true, None::<&str>)?;
-    let quit = MenuItem::with_id(app, "quit", "Quit UnderText", true, None::<&str>)?;
+    let start = MenuItem::with_id(app, "toggle", "开始字幕", true, None::<&str>)?;
+    let click = CheckMenuItem::with_id(app, "click_through", "锁定字幕窗口（鼠标穿透）", true, false, None::<&str>)?;
+    let show = MenuItem::with_id(app, "show", "显示 / 隐藏字幕", true, None::<&str>)?;
+    let settings = MenuItem::with_id(app, "settings", "设置…", true, None::<&str>)?;
+    let quit = MenuItem::with_id(app, "quit", "退出 UnderText", true, None::<&str>)?;
     let sep = PredefinedMenuItem::separator(app)?;
     let menu = Menu::with_items(app, &[&start, &click, &show, &sep, &settings, &quit])?;
     TrayIconBuilder::with_id("main")
@@ -621,11 +633,10 @@ fn main() {
                 config_path,
                 runner: Mutex::new(None),
                 stopping: Mutex::new(Vec::new()),
-                status: Mutex::new(Status { message: "Not started".into(), ..Default::default() }),
+                status: Mutex::new(Status { message: "未开始".into(), ..Default::default() }),
                 tray: Mutex::new(None),
                 board: Mutex::new(None),
                 downloader: Default::default(),
-                llama_dir: app.path().app_data_dir()?.join("llama.cpp"),
             });
             build_tray(app.handle())?;
             place_overlay(app.handle());
@@ -664,7 +675,8 @@ fn main() {
             open_settings,
             download_plan,
             download_start,
-            download_cancel
+            download_cancel,
+            open_for_manual_download
         ])
         .run(tauri::generate_context!())
         .expect("error while running UnderText");

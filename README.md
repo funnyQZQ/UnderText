@@ -10,6 +10,8 @@
 
 <p align="center"><a href="https://undertext.leo-draw.xyz/en/"><b>Website</b></a> | <a href="https://undertext.leo-draw.xyz/">中文网站</a> | <a href="../../releases/latest">Download</a></p>
 
+<p align="center">English | <a href="README.zh-CN.md">简体中文</a></p>
+
 UnderText shows live English subtitles with a Chinese translation underneath, in a small window that stays on top of whatever you are watching. Speech recognition, translation and speaker detection all run on the Mac. Nothing is sent over the network.
 
 <p align="center">
@@ -49,7 +51,7 @@ Each sentence gets three kinds of translation:
 
 TitaNet turns speech into a voice print and compares it with the speakers heard so far. While someone talks, it checks the last 1.5 s of audio every 1.5 s, so a known speaker is labelled about 1.5 s after they start. A voice that matches nobody (similarity below 0.45) becomes a new speaker once it has been heard consistently for about 4.5 s. When the segment ends, it is checked again in 1.5 s windows; this catches a change of speaker without a pause and corrects the labels if needed.
 
-A new paragraph starts when the speaker changes or after a pause of 1.2 s. The subtitle window gets only the paragraphs that changed, at most 10 times a second. **Save** writes everything since the last **Clear** to a text file, with a real timestamp for each paragraph.
+A new paragraph starts when the speaker changes or after a pause of 1.2 s. The subtitle window gets only the paragraphs that changed, at most 10 times a second. **Save** (保存) writes everything since the last **Clear** (清空) to a text file, with a real timestamp for each paragraph.
 
 Power saving changes some of these numbers: Qwen is called after 5 new words instead of 3 and gets 1 sentence of context instead of 3, and long segments are transcribed less often.
 
@@ -63,7 +65,7 @@ Power saving changes some of these numbers: Qwen is called after 5 new words ins
 | Draft translation | [Opus-MT en-zh](https://huggingface.co/Helsinki-NLP/opus-mt-en-zh) | CTranslate2 (CPU) | 150 MB | Apache-2.0 |
 | Translation | [Qwen3.5-2B](https://huggingface.co/Qwen/Qwen3.5-2B), Q4_K_M | llama-server (GPU) | 1.2 GB | Apache-2.0 |
 
-The models are not in this repository. The app downloads them on first launch; for source builds there is also a download script (see [Installation](#installation)).
+The models are not in this repository. They are kept in the project's own repositories on [Hugging Face](https://huggingface.co/funnyQZQ/undertext-models) and [ModelScope](https://modelscope.cn/models/funnyqzq/undertext-models). The app downloads them on first launch; for source builds there is also a download script (see [Installation](#installation)).
 
 ## Installation
 
@@ -74,10 +76,10 @@ You need a Mac with Apple Silicon (M1 or later). The models take about 2.2 GB of
 1. Download the `.dmg` from the [Releases](../../releases/latest) page.
 2. Open it and drag **UnderText** into **Applications**.
 3. The app is not signed by Apple, so macOS blocks the first launch. Right-click UnderText in Applications and choose **Open**, then **Open** again. If that doesn't work, go to **System Settings → Privacy & Security** and click **Open Anyway**.
-4. On first launch the settings window opens and lists the models it needs, with their sizes. Click **Download**. If `llama-server` from llama.cpp is not found (in your PATH or the Homebrew folders), it is downloaded as well.
-5. When the download finishes, choose where to listen and click **Save and Restart**.
+4. On first launch the settings window opens and lists the models it needs, with their sizes. Click **下载** (Download). The app interface is in Chinese. `llama-server` (from llama.cpp, which runs the translation model) is included in the app, so only the models are downloaded. The app tests Hugging Face and ModelScope and uses the faster one; ModelScope needs no VPN in mainland China. If neither can be reached, the dialog lists the missing files, with buttons that open both download pages and the models folder: download the files by hand, put them in the models folder with the same subfolders, and click **重新检查** (Check again).
+5. When the download finishes, choose where to listen and click **保存并重新开始** (Save and Restart).
 
-The models are saved in `~/Library/Application Support/dev.undertext.desktop/models`. If the download stops, click **Download…** in the settings window to continue; files that are already complete are not downloaded again.
+The models are saved in `~/Library/Application Support/dev.undertext.desktop/models`. If the download stops, click **下载…** (Download…) in the settings window to continue; files that are already complete are not downloaded again.
 
 ### Build from source
 
@@ -86,11 +88,11 @@ You need [Rust](https://rustup.rs) and Homebrew.
 ```bash
 brew install llama.cpp cmake
 cd desktop
-scripts/download_models.sh        # saves to ../models
+scripts/download_models.sh        # saves to ../models; MODELS_FROM=modelscope for ModelScope
 cargo run --release -p undertext-app
 ```
 
-To build the `.app` and `.dmg` yourself:
+To build the `.app` and `.dmg` yourself (this also puts the llama.cpp release build of `llama-server` into the app):
 
 ```bash
 cargo install tauri-cli --version "^2"

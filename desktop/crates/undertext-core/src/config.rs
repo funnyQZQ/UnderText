@@ -126,7 +126,8 @@ impl Default for LlmConfig {
 }
 
 /// Files a converted Opus-MT (CTranslate2) folder must contain.
-pub const OPUS_MT_FILES: [&str; 4] = ["model.bin", "shared_vocabulary.json", "source.spm", "target.spm"];
+/// config.json holds the special tokens (unk_token, ...); CTranslate2 fails to load without it.
+pub const OPUS_MT_FILES: [&str; 5] = ["config.json", "model.bin", "shared_vocabulary.json", "source.spm", "target.spm"];
 
 /// Fast draft translation shown until the commit LLM has produced Chinese.
 #[derive(Debug, Clone, Serialize, Deserialize)]

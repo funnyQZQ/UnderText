@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>UnderText Settings</title>
+<title>UnderText 设置</title>
 <style>
   :root {
     color-scheme: light dark;
@@ -308,6 +308,7 @@
     color: var(--label);
     box-shadow: 0 18px 50px rgba(0, 0, 0, 0.28), 0 0 0 0.5px rgba(0, 0, 0, 0.08);
   }
+  dialog.sheet { max-height: calc(100vh - 32px); overflow-y: auto; }
   dialog.sheet::backdrop { background: rgba(0, 0, 0, 0.22); }
   .sheet h3 { margin: 0 0 4px; font-size: 15px; font-weight: 600; }
   .sheet p { margin: 0 0 12px; color: var(--secondary); }
@@ -330,6 +331,16 @@
   .sheet .reasons li { padding: 3px 0 3px 10px; border-left: 2px solid color-mix(in srgb, var(--red) 45%, transparent); margin-bottom: 4px; }
   .sheet .reasons li b { font-weight: 600; }
   .sheet .reasons .hint { color: var(--secondary); }
+  .sheet .manual { margin-top: 14px; padding-top: 12px; border-top: 0.5px solid var(--sep); -webkit-user-select: text; user-select: text; }
+  .sheet .manual h4 { margin: 0 0 6px; font-size: 13px; font-weight: 600; }
+  .sheet .manual ol { margin: 0; padding-left: 18px; }
+  .sheet .manual li { margin-bottom: 6px; }
+  .sheet .manual code { font: 11px ui-monospace, SFMono-Regular, Menlo, monospace; }
+  .sheet .manual .files { list-style: none; margin: 5px 0 2px; padding: 6px 8px; max-height: 92px; overflow-y: auto; border-radius: 6px; background: var(--segment-bg); }
+  .sheet .manual .files li { margin: 0; font: 11px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; word-break: break-all; }
+  .sheet .manual .links { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 2px; }
+  .sheet .manual .found { margin-top: 6px; color: var(--secondary); }
+  .sheet .manual .found.bad { color: var(--red); }
 
   @media (prefers-reduced-motion: reduce) { input.switch, input.switch::before, summary::before, .bar > div { transition: none; } }
   @media (max-width: 500px) {
@@ -340,59 +351,59 @@
 </style>
 </head>
 <body>
-<div class="titlebar" data-tauri-drag-region>Settings</div>
+<div class="titlebar" data-tauri-drag-region>设置</div>
 <div class="scroll">
 <main>
   <div class="hero" data-tauri-drag-region>
     <img src="app-icon.png" alt="">
     <div>
       <h1>UnderText</h1>
-      <div class="state"><span class="dot" id="run_dot"></span><span id="run_state">Checking models…</span></div>
+      <div class="state"><span class="dot" id="run_dot"></span><span id="run_state">正在检查模型…</span></div>
     </div>
   </div>
 
   <div class="banner hidden" id="model_banner">
     <span id="model_banner_text"></span>
-    <button id="show_models">Show</button>
-    <button id="download_models" class="default hidden">Download…</button>
+    <button id="show_models">查看</button>
+    <button id="download_models" class="default hidden">下载…</button>
   </div>
 
-  <h2>Audio source</h2>
+  <h2>音频来源</h2>
   <div class="card">
     <div class="row">
-      <div class="text"><span class="label">Listen to</span></div>
+      <div class="text"><span class="label">收听</span></div>
       <div class="ctl">
-        <div class="segmented" role="radiogroup" aria-label="Listen to">
-          <label><input type="radio" name="source" value="mic"><span>Input device</span></label>
-          <label><input type="radio" name="source" value="wav"><span>Audio file</span></label>
+        <div class="segmented" role="radiogroup" aria-label="收听">
+          <label><input type="radio" name="source" value="mic"><span>输入设备</span></label>
+          <label><input type="radio" name="source" value="wav"><span>音频文件</span></label>
         </div>
       </div>
     </div>
     <div class="row" data-src="mic">
-      <div class="text"><label for="device">Input device</label></div>
+      <div class="text"><label for="device">输入设备</label></div>
       <div class="ctl wide">
         <span class="popup"><select id="device"></select></span>
-        <button id="refresh" class="icon-btn" title="Refresh devices" aria-label="Refresh devices">
+        <button id="refresh" class="icon-btn" title="刷新设备列表" aria-label="刷新设备列表">
           <svg viewBox="0 0 16 16"><path d="M13 8a5 5 0 1 1-1.5-3.6M13 2.5v3h-3"/></svg>
         </button>
       </div>
     </div>
     <div class="row" data-src="wav">
-      <div class="text"><label for="wav_path">WAV file</label></div>
-      <div class="ctl wide"><input type="text" id="wav_path" spellcheck="false"><button id="pick_wav">Choose…</button></div>
+      <div class="text"><label for="wav_path">WAV 文件</label></div>
+      <div class="ctl wide"><input type="text" id="wav_path" spellcheck="false"><button id="pick_wav">选择…</button></div>
     </div>
     <div class="row" data-src="wav">
-      <div class="text"><label for="play">Play audio</label><span class="desc">Subtitles follow playback</span></div>
+      <div class="text"><label for="play">播放音频</label><span class="desc">字幕跟着播放进度走</span></div>
       <div class="ctl"><input type="checkbox" class="switch" id="play"></div>
     </div>
     <div class="row" data-src="wav">
-      <div class="text"><label for="output_device">Output device</label></div>
+      <div class="text"><label for="output_device">输出设备</label></div>
       <div class="ctl wide"><span class="popup"><select id="output_device"></select></span></div>
     </div>
   </div>
-  <p class="note" id="mic_note">To caption audio playing on this Mac, such as a meeting or a video, install BlackHole, add it to a Multi-Output Device in Audio MIDI Setup, and select it here.</p>
+  <p class="note" id="mic_note">要给这台 Mac 正在播放的声音（比如会议、视频）加字幕：先安装 BlackHole，在“音频 MIDI 设置”里把它加进一个“多输出设备”，然后在这里选择 BlackHole。</p>
 
-  <h2>Subtitles</h2>
+  <h2>字幕</h2>
   <div class="card">
     <div class="preview" aria-hidden="true">
       <div class="band" id="preview">
@@ -406,120 +417,120 @@
       </div>
     </div>
     <div class="row">
-      <div class="text"><label for="translate">Translate into Chinese</label>
-        <span class="desc" id="translate_off_hint">English only. The translation models are not loaded, which saves power.</span></div>
+      <div class="text"><label for="translate">翻译成中文</label>
+        <span class="desc" id="translate_off_hint">只显示英文。不加载翻译模型，更省电。</span></div>
       <div class="ctl"><input type="checkbox" class="switch" id="translate"></div>
     </div>
     <div class="row">
-      <div class="text"><span class="label">Layout</span></div>
+      <div class="text"><span class="label">排列方式</span></div>
       <div class="ctl">
-        <div class="segmented" role="radiogroup" aria-label="Layout">
-          <label><input type="radio" name="layout" value="stacked"><span>Stacked</span></label>
-          <label><input type="radio" name="layout" value="side_by_side"><span>Side by side</span></label>
+        <div class="segmented" role="radiogroup" aria-label="排列方式">
+          <label><input type="radio" name="layout" value="stacked"><span>上下</span></label>
+          <label><input type="radio" name="layout" value="side_by_side"><span>左右</span></label>
         </div>
       </div>
     </div>
     <div class="row">
-      <div class="text"><label for="show_english">Show English</label><span class="desc">Always shown when translation is off</span></div>
+      <div class="text"><label for="show_english">显示英文</label><span class="desc">关闭翻译时始终显示</span></div>
       <div class="ctl"><input type="checkbox" class="switch" id="show_english"></div>
     </div>
     <div class="row">
-      <div class="text"><label for="diar_on">Speaker labels</label><span class="desc">Tag each paragraph with S1, S2, …</span></div>
+      <div class="text"><label for="diar_on">标出说话人</label><span class="desc">每段前面标上 S1、S2…</span></div>
       <div class="ctl"><input type="checkbox" class="switch" id="diar_on"></div>
     </div>
     <div class="row">
-      <div class="text"><label for="font_size">Chinese text size</label></div>
+      <div class="text"><label for="font_size">中文字号</label></div>
       <div class="ctl slider"><input type="range" id="font_size" min="14" max="44"><output id="font_size_v"></output></div>
     </div>
     <div class="row">
-      <div class="text"><label for="font_size_en">English text size</label></div>
+      <div class="text"><label for="font_size_en">英文字号</label></div>
       <div class="ctl slider"><input type="range" id="font_size_en" min="10" max="44"><output id="font_size_en_v"></output></div>
     </div>
     <div class="row">
-      <div class="text"><label for="opacity">Background</label></div>
+      <div class="text"><label for="opacity">背景不透明度</label></div>
       <div class="ctl slider"><input type="range" id="opacity" min="0" max="1" step="0.05"><output id="opacity_v"></output></div>
     </div>
   </div>
 
   <div class="card">
     <div class="row">
-      <div class="text"><label for="power_saving">Power saving</label>
-        <span class="desc">Runs recognition on the efficiency cores and calls the translation model less often. Subtitles appear slightly later.</span></div>
+      <div class="text"><label for="power_saving">省电模式</label>
+        <span class="desc">语音识别改用能效核心，翻译模型调用得更少。字幕会稍晚一点出现。</span></div>
       <div class="ctl"><input type="checkbox" class="switch" id="power_saving"></div>
     </div>
   </div>
 
   <details id="advanced">
-    <summary>Advanced</summary>
+    <summary>高级</summary>
 
-    <h2>Models</h2>
+    <h2>模型</h2>
     <div class="card" id="models_card">
       <div class="row">
-        <div class="text"><label for="models_dir">Models folder</label></div>
-        <div class="ctl wide"><input type="text" id="models_dir" spellcheck="false"><button id="pick_models">Choose…</button></div>
+        <div class="text"><label for="models_dir">模型文件夹</label></div>
+        <div class="ctl wide"><input type="text" id="models_dir" spellcheck="false"><button id="pick_models">选择…</button></div>
       </div>
       <div class="row">
-        <div class="text"><span id="check_msg">Checking…</span></div>
-        <div class="ctl"><button id="check">Check again</button></div>
+        <div class="text"><span id="check_msg">正在检查…</span></div>
+        <div class="ctl"><button id="check">重新检查</button></div>
       </div>
       <ul class="checks" id="checks"></ul>
       <div id="translate_rows">
         <div class="row">
-          <div class="text"><label for="commit_model">Translation model</label><span class="desc">GGUF file in the models folder</span></div>
+          <div class="text"><label for="commit_model">翻译模型</label><span class="desc">模型文件夹里的 GGUF 文件</span></div>
           <div class="ctl wide"><input type="text" id="commit_model" spellcheck="false"></div>
         </div>
         <div class="row">
-          <div class="text"><label for="draft_on">Instant drafts</label><span class="desc">Show a quick Opus-MT translation until the main model catches up</span></div>
+          <div class="text"><label for="draft_on">即时草稿</label><span class="desc">主模型翻译出来之前，先显示 Opus-MT 的快速译文</span></div>
           <div class="ctl"><input type="checkbox" class="switch" id="draft_on"></div>
         </div>
         <div class="row" id="draft_row">
-          <div class="text"><label for="draft_model">Draft model folder</label></div>
+          <div class="text"><label for="draft_model">草稿模型文件夹</label></div>
           <div class="ctl wide"><input type="text" id="draft_model" spellcheck="false"></div>
         </div>
       </div>
       <div class="row">
         <div class="text"><label for="llama_binary">llama-server</label></div>
-        <div class="ctl wide"><input type="text" id="llama_binary" spellcheck="false" placeholder="Found automatically (brew install llama.cpp)"></div>
+        <div class="ctl wide"><input type="text" id="llama_binary" spellcheck="false" placeholder="自动查找（或 brew install llama.cpp）"></div>
       </div>
     </div>
 
-    <h2>Paragraphs and speakers</h2>
+    <h2>分段与说话人</h2>
     <div class="card">
       <div class="row">
-        <div class="text"><label for="pause_s">New paragraph after a pause of</label></div>
+        <div class="text"><label for="pause_s">停顿超过这个时长就另起一段</label></div>
         <div class="ctl"><input type="number" id="pause_s" min="0.3" max="10" step="0.1"><span class="unit">s</span></div>
       </div>
       <div class="row">
-        <div class="text"><label for="split_on_speaker">New paragraph when the speaker changes</label></div>
+        <div class="text"><label for="split_on_speaker">换人说话时另起一段</label></div>
         <div class="ctl"><input type="checkbox" class="switch" id="split_on_speaker"></div>
       </div>
       <div class="row">
-        <div class="text"><label for="history">Earlier paragraphs to keep</label><span class="desc">Scroll the subtitle window to read them</span></div>
+        <div class="text"><label for="history">保留之前的段落数</label><span class="desc">在字幕窗口里滚动就能看到</span></div>
         <div class="ctl"><input type="number" id="history" min="0" max="200"><span class="unit"></span></div>
       </div>
       <div class="row">
-        <div class="text"><label for="max_speakers">Maximum speakers</label><span class="desc">0 for no limit. Set 2 for a two-person interview.</span></div>
+        <div class="text"><label for="max_speakers">最多说话人数</label><span class="desc">0 表示不限。两人访谈可以设为 2。</span></div>
         <div class="ctl"><input type="number" id="max_speakers" min="0" max="20"><span class="unit"></span></div>
       </div>
       <div class="row">
-        <div class="text"><label for="threshold">New speaker threshold</label><span class="desc">Lower it if one person is split in two; raise it if two people are merged. Default 0.45.</span></div>
+        <div class="text"><label for="threshold">新说话人阈值</label><span class="desc">一个人被分成两个时调低，两个人被当成一个时调高。默认 0.45。</span></div>
         <div class="ctl"><input type="number" id="threshold" min="0.1" max="0.8" step="0.05"><span class="unit"></span></div>
       </div>
     </div>
 
-    <h2>Recognition</h2>
+    <h2>语音识别</h2>
     <div class="card">
       <div class="row">
-        <div class="text"><label for="decode_interval_s">English update interval</label><span class="desc">Shorter is faster but uses more power</span></div>
+        <div class="text"><label for="decode_interval_s">英文刷新间隔</label><span class="desc">越短越快，但更耗电</span></div>
         <div class="ctl"><input type="number" id="decode_interval_s" min="0.2" max="2" step="0.1"><span class="unit">s</span></div>
       </div>
       <div class="row">
-        <div class="text"><label for="min_silence_s">Sentence-end silence</label></div>
+        <div class="text"><label for="min_silence_s">句末静音时长</label></div>
         <div class="ctl"><input type="number" id="min_silence_s" min="0.2" max="2" step="0.05"><span class="unit">s</span></div>
       </div>
       <div class="row">
-        <div class="text"><label for="log_path">Latency log</label><span class="desc">For undertext-cli report</span></div>
-        <div class="ctl wide"><input type="text" id="log_path" spellcheck="false" placeholder="Off, e.g. ~/undertext-log.jsonl"></div>
+        <div class="text"><label for="log_path">延迟日志</label><span class="desc">供 undertext-cli report 分析</span></div>
+        <div class="ctl wide"><input type="text" id="log_path" spellcheck="false" placeholder="不记录，例如 ~/undertext-log.jsonl"></div>
       </div>
     </div>
   </details>
@@ -528,32 +539,50 @@
 
 <footer>
   <span class="msg" id="msg"></span>
-  <button id="save_start" class="default">Save and Restart</button>
+  <button id="save_start" class="default">保存并重新开始</button>
 </footer>
 
 <dialog class="sheet" id="dl">
   <div id="dl_ask">
-    <h3>Download models</h3>
-    <p>UnderText runs these models on your Mac. They are downloaded once; after that nothing goes over the network.</p>
+    <h3>下载模型</h3>
+    <p>UnderText 在你的 Mac 上运行这些模型。只需下载一次，之后不再联网。</p>
     <ul class="items" id="dl_items"></ul>
-    <div class="total"><span>Total</span><span class="size" id="dl_total"></span></div>
+    <div class="total"><span>合计</span><span class="size" id="dl_total"></span></div>
     <div class="where" id="dl_where"></div>
     <p class="error hidden" id="dl_unknown"></p>
     <div class="actions">
-      <button id="dl_later">Not Now</button>
-      <button id="dl_go" class="default">Download</button>
+      <button id="dl_later">以后再说</button>
+      <button id="dl_go" class="default">下载</button>
     </div>
   </div>
   <div id="dl_run" class="hidden">
-    <h3 id="dl_title">Downloading models</h3>
-    <p id="dl_note">You can close this window. The download keeps going, and it picks up where it left off if it stops.</p>
-    <div class="current" id="dl_current">Starting…</div>
+    <h3 id="dl_title">正在下载模型</h3>
+    <p id="dl_note">可以关闭这个窗口，下载会继续。如果中断了，下次会接着下载。</p>
+    <div class="current" id="dl_current">正在开始…</div>
     <div class="bar"><div id="dl_bar"></div></div>
     <div class="numbers"><span id="dl_bytes"></span><span id="dl_speed"></span></div>
     <div class="reasons hidden" id="dl_error"></div>
+    <div class="manual hidden" id="dl_manual">
+      <h4>手动下载</h4>
+      <ol>
+        <li>打开任意一个下载页（在中国大陆用 ModelScope 通常更快），下载这些文件：
+          <ul class="files" id="dl_files"></ul>
+          <div class="links">
+            <button data-open="modelscope">打开 ModelScope</button>
+            <button data-open="huggingface">打开 Hugging Face</button>
+          </div>
+        </li>
+        <li>把文件放进模型文件夹，子文件夹和文件名都要和上面一样，比如 <code>opus-mt-en-zh-ct2/model.bin</code> 要放在模型文件夹里的 <code>opus-mt-en-zh-ct2</code> 文件夹中。
+          <div class="links"><button data-open="models">打开模型文件夹</button></div>
+        </li>
+        <li>放好后点“重新检查”。文件都齐了，这个窗口会自动关闭，再点“保存并重新开始”就能使用。</li>
+      </ol>
+      <div class="found hidden" id="dl_found"></div>
+    </div>
     <div class="actions">
-      <button id="dl_cancel">Cancel</button>
-      <button id="dl_retry" class="default hidden">Try Again</button>
+      <button id="dl_recheck" class="hidden">重新检查</button>
+      <button id="dl_cancel">取消</button>
+      <button id="dl_retry" class="default hidden">重试</button>
     </div>
   </div>
 </dialog>
@@ -569,9 +598,9 @@
   // config floats are f32 on the Rust side: show 0.65, not 0.64999997
   const num = (x) => Number(Number(x).toFixed(3));
   const LABELS = {
-    'ASR encoder': 'Speech encoder', 'ASR decoder': 'Speech decoder', 'ASR joiner': 'Speech joiner',
-    'ASR tokens': 'Speech tokens', 'Silero VAD': 'Voice activity (VAD)', 'commit LLM': 'Translation model',
-    'draft model': 'Draft model', 'speaker model': 'Speaker model',
+    'ASR encoder': '语音识别编码器', 'ASR decoder': '语音识别解码器', 'ASR joiner': '语音识别连接器',
+    'ASR tokens': '语音识别词表', 'Silero VAD': '人声检测（VAD）', 'commit LLM': '翻译模型',
+    'draft model': '草稿模型', 'speaker model': '说话人模型',
   };
 
   function setMsg(text, bad) {
@@ -611,10 +640,10 @@
   async function loadDevices() {
     try {
       const d = await invoke('list_devices');
-      fillSelect($('device'), d.inputs, cfg.audio.device, 'System default');
-      fillSelect($('output_device'), d.outputs, cfg.audio.output_device, 'System default');
+      fillSelect($('device'), d.inputs, cfg.audio.device, '系统默认');
+      fillSelect($('output_device'), d.outputs, cfg.audio.output_device, '系统默认');
     } catch (e) {
-      setMsg('Could not read audio devices: ' + e, true);
+      setMsg('无法读取音频设备：' + e, true);
     }
   }
 
@@ -721,22 +750,22 @@
     const dot = $('run_dot');
     dot.className = 'dot';
     let text;
-    if (status.error) { dot.classList.add('bad'); text = 'Something went wrong. Check the subtitle window for details.'; }
-    else if (status.running) { dot.classList.add('live'); text = status.message || 'Running'; }
-    else if (missing === null) { text = 'Checking models…'; }
-    else if (missing) { dot.classList.add('bad'); text = missing === 1 ? '1 item missing' : `${missing} items missing`; }
-    else { dot.classList.add('ok'); text = 'Ready'; }
+    if (status.error) { dot.classList.add('bad'); text = '出错了，详情见字幕窗口。'; }
+    else if (status.running) { dot.classList.add('live'); text = status.message || '运行中'; }
+    else if (missing === null) { text = '正在检查模型…'; }
+    else if (missing) { dot.classList.add('bad'); text = `缺少 ${missing} 项`; }
+    else { dot.classList.add('ok'); text = '准备就绪'; }
     $('run_state').textContent = text;
     $('model_banner').classList.toggle('hidden', !missing);
     if (missing) {
       $('model_banner_text').textContent = missingNames.length === 1 && missingNames[0] === LABELS['draft model']
-        ? 'Draft model not found. Subtitles still work, without instant drafts.'
-        : 'Not found: ' + missingNames.join(', ') + '.';
+        ? '找不到草稿模型。字幕仍然可用，只是没有即时草稿。'
+        : '找不到：' + missingNames.join('、') + '。';
     }
   }
 
   async function check() {
-    $('check_msg').textContent = 'Checking…';
+    $('check_msg').textContent = '正在检查…';
     $('check_msg').className = '';
     const res = await invoke('check_setup', { config: fromForm() });
     const ul = $('checks');
@@ -747,7 +776,7 @@
       li.children[1].textContent = what;
       // rtl keeps the end of a long path visible; the bdi stops it from reordering the text
       const bdi = document.createElement('bdi');
-      bdi.textContent = ok ? path : 'Missing: ' + path;
+      bdi.textContent = ok ? path : '缺少：' + path;
       li.children[2].append(bdi);
       li.children[2].title = path;
       li.children[2].classList.toggle('missing', !ok);
@@ -760,7 +789,7 @@
     if (!res.llama_server.Ok) missingNames.push('llama-server');
     missing = missingNames.length;
     const total = res.models.length + 1;
-    $('check_msg').textContent = missing ? `${total - missing} of ${total} found` : `All ${total} found`;
+    $('check_msg').textContent = missing ? `找到 ${total - missing} / ${total} 项` : `${total} 项全部找到`;
     $('check_msg').className = missing ? 'bad' : 'ok';
     renderHeader();
     return missing;
@@ -774,8 +803,8 @@
   function updateDirty() {
     if (!cfg) return;
     const dirty = JSON.stringify(fromForm()) !== baseline;
-    if (dirty) setMsg('Unsaved changes');
-    else if ($('msg').textContent === 'Unsaved changes') setMsg('');
+    if (dirty) setMsg('有未保存的更改');
+    else if ($('msg').textContent === '有未保存的更改') setMsg('');
   }
 
   async function save() {
@@ -817,7 +846,7 @@
       // false: models are missing and the download dialog is up, so stay open
       if (await invoke('start')) window.__TAURI__.window.getCurrentWindow().hide();
     } catch (e) {
-      setMsg('Could not start: ' + e, true);
+      setMsg('无法开始：' + e, true);
     }
   };
 
@@ -826,7 +855,7 @@
   let plan = null;
   let downloading = false;
   const fmtSize = (b) => b >= 1e9 ? (b / 1e9).toFixed(2) + ' GB' : b >= 1e6 ? Math.round(b / 1e6) + ' MB' : Math.max(1, Math.round(b / 1e3)) + ' KB';
-  const fmtTime = (s) => s < 60 ? 'less than a minute left' : s < 3600 ? `about ${Math.round(s / 60)} min left` : `about ${(s / 3600).toFixed(1)} h left`;
+  const fmtTime = (s) => s < 60 ? '剩余不到 1 分钟' : s < 3600 ? `剩余约 ${Math.round(s / 60)} 分钟` : `剩余约 ${(s / 3600).toFixed(1)} 小时`;
 
   async function loadPlan() {
     try { plan = await invoke('download_plan', { config: fromForm() }); } catch (e) { plan = null; }
@@ -843,11 +872,11 @@
       return li;
     }));
     $('dl_total').textContent = fmtSize(plan.total);
-    $('dl_where').textContent = 'Saved to ' + $('models_dir').value;
+    $('dl_where').textContent = '保存到 ' + $('models_dir').value;
     $('dl_where').title = $('models_dir').value;
     $('dl_unknown').classList.toggle('hidden', !plan.unknown.length);
     $('dl_unknown').textContent = plan.unknown.length
-      ? 'Not on the download list (set in Advanced): ' + plan.unknown.map((p) => p.split('/').pop()).join(', ') : '';
+      ? '不在下载列表里（在“高级”里设置的）：' + plan.unknown.map((p) => p.split('/').pop()).join('、') : '';
     $('dl_ask').classList.remove('hidden');
     $('dl_run').classList.add('hidden');
     if (!$('dl').open) $('dl').showModal();
@@ -858,9 +887,11 @@
     $('dl_ask').classList.add('hidden');
     $('dl_run').classList.remove('hidden');
     $('dl_error').classList.add('hidden');
+    $('dl_manual').classList.add('hidden');
+    $('dl_recheck').classList.add('hidden');
     $('dl_retry').classList.add('hidden');
-    $('dl_cancel').textContent = 'Cancel';
-    $('dl_title').textContent = 'Downloading models';
+    $('dl_cancel').textContent = '取消';
+    $('dl_title').textContent = '正在下载模型';
     $('dl_note').classList.remove('hidden');
     if (!$('dl').open) $('dl').showModal();
   }
@@ -869,7 +900,7 @@
     downloading = true;
     $('download_models').classList.add('hidden');
     showRun();
-    $('dl_current').textContent = 'Starting…';
+    $('dl_current').textContent = '正在开始…';
     $('dl_bar').style.width = '0';
     $('dl_bytes').textContent = '';
     $('dl_speed').textContent = '';
@@ -880,7 +911,7 @@
     if (!$('dl').open || $('dl_run').classList.contains('hidden')) showRun();
     const frac = p.total ? p.done / p.total : 0;
     $('dl_bar').style.width = (frac * 100).toFixed(1) + '%';
-    $('dl_bytes').textContent = `${fmtSize(p.done)} of ${fmtSize(p.total)}`;
+    $('dl_bytes').textContent = `${fmtSize(p.done)} / ${fmtSize(p.total)}`;
     if (p.state === 'running') {
       $('dl_current').textContent = p.label;
       $('dl_speed').textContent = p.bytes_per_s > 0
@@ -891,14 +922,14 @@
     $('dl_speed').textContent = '';
     if (p.state === 'done') {
       $('dl').close();
-      setMsg('Models downloaded.');
+      setMsg('模型已下载完成。');
       check().then(loadPlan);
     } else if (p.state === 'cancelled') {
       $('dl').close();
-      setMsg('Download cancelled. What was downloaded so far is kept.');
+      setMsg('已取消下载。已经下载的部分会保留。');
       loadPlan();
     } else {
-      $('dl_title').textContent = 'Download stopped';
+      $('dl_title').textContent = '下载中断了';
       $('dl_note').classList.add('hidden');
       loadPlan();
       $('dl_current').textContent = p.label;
@@ -917,7 +948,7 @@
           for (const l of servers) {
             const li = document.createElement('li');
             const i = l.indexOf(': ');
-            if (i > 0 && !l.slice(0, i).includes(' ')) {
+            if (i > 0 && i <= 16) {
               const b = document.createElement('b');
               b.textContent = l.slice(0, i);
               li.append(b, ': ' + l.slice(i + 2));
@@ -932,10 +963,42 @@
         box.append(hint);
       }
       $('dl_error').classList.remove('hidden');
+      if (p.manual) loadPlan().then(showManual);
       $('dl_retry').classList.remove('hidden');
-      $('dl_cancel').textContent = 'Close';
+      $('dl_cancel').textContent = '关闭';
     }
   }
+
+  // neither download site works: list the missing files and how to put them in place
+  function showManual() {
+    const files = (plan && plan.files) || [];
+    $('dl_files').replaceChildren(...files.map((f) => {
+      const li = document.createElement('li');
+      li.textContent = f;
+      return li;
+    }));
+    $('dl_found').classList.add('hidden');
+    $('dl_manual').classList.remove('hidden');
+    $('dl_recheck').classList.remove('hidden');
+  }
+  document.querySelectorAll('#dl_manual [data-open]').forEach((b) => {
+    b.onclick = () => invoke('open_for_manual_download', { which: b.dataset.open, config: fromForm() })
+      .catch((e) => setMsg(String(e), true));
+  });
+  $('dl_recheck').onclick = async () => {
+    await check();
+    await loadPlan();
+    const left = (plan && plan.files) || [];
+    if (!left.length) {
+      $('dl').close();
+      setMsg('模型都已就绪，点“保存并重新开始”即可使用。');
+      return;
+    }
+    showManual();
+    $('dl_found').textContent = `还缺 ${left.length} 个文件，列表已更新。`;
+    $('dl_found').classList.add('bad');
+    $('dl_found').classList.remove('hidden');
+  };
 
   $('download_models').onclick = async () => { if (await loadPlan()) showAsk(); };
   $('dl_later').onclick = () => $('dl').close();
